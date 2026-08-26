@@ -1,0 +1,17 @@
+{
+  "name": "brena-public-web",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Sitio público de captación de Brena",
+  "main": "src/app.js",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "test": "node --test",
+    "check:production": "node scripts/check-production-config.js"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  }
+}
