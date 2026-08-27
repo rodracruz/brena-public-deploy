@@ -66,3 +66,38 @@ test("the Windows sync downloads an authenticated workbook atomically", async (t
   assert.deepEqual(await fs.readFile(destinationPath), workbookBytes);
   assert.equal(await fs.access(`${destinationPath}.tmp`).then(() => true, () => false), false);
 });
+
+test("the Windows sync resolves its default paths under Windows PowerShell", async (t) => {
+  const sourceScript = path.join(__dirname, "..", "ops", "sync-render-leads.ps1");
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "brena-sync-defaults-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+
+  const opsDirectory = path.join(root, "app", "ops");
+  const runtimeDirectory = path.join(opsDirectory, "runtime");
+  const copiedScript = path.join(opsDirectory, "sync-render-leads.ps1");
+  const expectedWorkbook = path.join(root, "outputs", "01a03663-35f2-70e2-848d-af024af190de", "Leads-Brena.xlsx");
+  const token = "test-default-token-with-at-least-32-characters";
+  const workbookBytes = Buffer.from("PK\u0003\u0004default-path-workbook");
+
+  await fs.mkdir(runtimeDirectory, { recursive: true });
+  await fs.copyFile(sourceScript, copiedScript);
+  await fs.writeFile(path.join(runtimeDirectory, "render-export-token.txt"), token, "utf8");
+
+  const server = http.createServer((request, response) => {
+    assert.equal(request.headers.authorization, `Bearer ${token}`);
+    response.writeHead(200, {
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "content-length": workbookBytes.length,
+    });
+    response.end(workbookBytes);
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+
+  const result = await runPowerShell(copiedScript, [
+    "-ExportUrl", `http://127.0.0.1:${server.address().port}/admin/leads.xlsx`,
+  ]);
+  assert.equal(result.code, 0, result.stderr || result.stdout);
+  assert.deepEqual(await fs.readFile(expectedWorkbook), workbookBytes);
+});

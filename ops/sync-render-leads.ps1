@@ -4,13 +4,20 @@ param(
   [ValidateNotNullOrEmpty()]
   [string]$ExportUrl,
 
-  [string]$TokenPath = (Join-Path $PSScriptRoot "runtime\render-export-token.txt"),
+  [string]$TokenPath,
 
-  [string]$DestinationPath = (Join-Path $PSScriptRoot "..\..\outputs\01a03663-35f2-70e2-848d-af024af190de\Leads-Brena.xlsx")
+  [string]$DestinationPath
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($TokenPath)) {
+  $TokenPath = Join-Path $PSScriptRoot "runtime\render-export-token.txt"
+}
+if ([string]::IsNullOrWhiteSpace($DestinationPath)) {
+  $DestinationPath = Join-Path $PSScriptRoot "..\..\outputs\01a03663-35f2-70e2-848d-af024af190de\Leads-Brena.xlsx"
+}
 
 $uri = [Uri]$ExportUrl
 $loopbackHosts = @("127.0.0.1", "localhost", "::1")
