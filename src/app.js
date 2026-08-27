@@ -32,6 +32,9 @@ const server = createServer({
   publicDir: path.join(__dirname, "..", "frontend", "public"),
   brenaClient,
   leadArchive,
+  adminExport: config.adminExportToken
+    ? { token: config.adminExportToken, workbookPath }
+    : undefined,
   trustProxy: config.trustProxy,
 });
 

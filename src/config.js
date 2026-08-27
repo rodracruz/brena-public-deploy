@@ -68,6 +68,7 @@ function runtimeConfig(env = process.env) {
     localArchiveEnabled,
     leadArchiveDir: path.resolve(env.BRENA_LOCAL_LEADS_DIR || DEFAULT_LEAD_ARCHIVE_DIR),
     spreadsheetNode: env.BRENA_SPREADSHEET_NODE || process.execPath,
+    adminExportToken: (env.BRENA_ADMIN_EXPORT_TOKEN || "").trim(),
   };
 }
 

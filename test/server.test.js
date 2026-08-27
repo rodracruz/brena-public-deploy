@@ -49,6 +49,46 @@ test("serves a minimal healthcheck without caching it", async () => {
   });
 });
 
+test("serves the lead workbook only with the configured bearer token", async (t) => {
+  const directory = await require("node:fs/promises").mkdtemp(path.join(require("node:os").tmpdir(), "brena-export-"));
+  t.after(() => require("node:fs/promises").rm(directory, { recursive: true, force: true }));
+  const workbookPath = path.join(directory, "Leads-Brena.xlsx");
+  const workbookBytes = Buffer.from("PK\u0003\u0004brena-workbook");
+  await require("node:fs/promises").writeFile(workbookPath, workbookBytes);
+
+  await withServer({
+    adminExport: {
+      token: "test-export-token-with-at-least-32-characters",
+      workbookPath,
+    },
+  }, async (baseUrl) => {
+    const unauthorized = await fetch(`${baseUrl}/admin/leads.xlsx`);
+    assert.equal(unauthorized.status, 401);
+    assert.equal(unauthorized.headers.get("www-authenticate"), "Bearer");
+
+    const authorized = await fetch(`${baseUrl}/admin/leads.xlsx`, {
+      headers: { authorization: "Bearer test-export-token-with-at-least-32-characters" },
+    });
+    assert.equal(authorized.status, 200);
+    assert.equal(
+      authorized.headers.get("content-type"),
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    assert.equal(authorized.headers.get("cache-control"), "no-store");
+    assert.match(authorized.headers.get("content-disposition"), /attachment; filename="Leads-Brena.xlsx"/);
+    assert.deepEqual(Buffer.from(await authorized.arrayBuffer()), workbookBytes);
+  });
+});
+
+test("does not expose an admin export route when it is not configured", async () => {
+  await withServer({}, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/admin/leads.xlsx`, {
+      headers: { authorization: "Bearer any-token" },
+    });
+    assert.equal(response.status, 404);
+  });
+});
+
 test("serves the website and static assets with browser security headers", async () => {
   await withServer({}, async (baseUrl) => {
     const page = await fetch(`${baseUrl}/`);

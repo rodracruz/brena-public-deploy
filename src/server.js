@@ -1,6 +1,7 @@
 "use strict";
 
 const http = require("node:http");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -129,10 +130,56 @@ async function serveStatic(request, response, publicDir, pathname) {
   return true;
 }
 
+function authorizedForExport(request, expectedToken) {
+  const header = String(request.headers.authorization || "");
+  const suppliedToken = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const supplied = Buffer.from(suppliedToken);
+  const expected = Buffer.from(expectedToken);
+  return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+}
+
+async function serveWorkbookExport(request, response, adminExport) {
+  if (!authorizedForExport(request, adminExport.token)) {
+    writeJson(response, 401, { ok: false, message: "Acceso no autorizado." }, {
+      "www-authenticate": "Bearer",
+    });
+    return;
+  }
+
+  let stat;
+  try {
+    stat = await fs.promises.stat(adminExport.workbookPath);
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." });
+      return;
+    }
+    throw error;
+  }
+  if (!stat.isFile()) {
+    writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." });
+    return;
+  }
+
+  response.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "cache-control": "no-store",
+    "content-disposition": 'attachment; filename="Leads-Brena.xlsx"',
+    "content-length": stat.size,
+    "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  if (request.method === "HEAD") {
+    response.end();
+    return;
+  }
+  fs.createReadStream(adminExport.workbookPath).pipe(response);
+}
+
 function createServer({
   publicDir,
   brenaClient,
   leadArchive,
+  adminExport,
   rateLimiter = createRateLimiter({ windowMs: 60_000, max: 5 }),
   trustProxy = false,
   now = () => new Date(),
@@ -145,6 +192,14 @@ function createServer({
   if (!leadArchive || typeof leadArchive.save !== "function") {
     throw new Error("leadArchive.save is required");
   }
+  if (adminExport && (
+    typeof adminExport.token !== "string"
+    || adminExport.token.length < 32
+    || typeof adminExport.workbookPath !== "string"
+    || !adminExport.workbookPath
+  )) {
+    throw new Error("adminExport requires a token of at least 32 characters and a workbookPath");
+  }
 
   return http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url || "/", "http://localhost");
@@ -153,6 +208,13 @@ function createServer({
     try {
       if (request.method === "GET" && pathname === "/healthcheck") {
         writeJson(response, 200, { status: "ok" });
+        return;
+      }
+
+      if (["GET", "HEAD"].includes(request.method)
+        && pathname === "/admin/leads.xlsx"
+        && adminExport) {
+        await serveWorkbookExport(request, response, adminExport);
         return;
       }
 

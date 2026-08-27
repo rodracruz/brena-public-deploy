@@ -19,6 +19,7 @@ test("uses a safe preview configuration for local development", () => {
     localArchiveEnabled: true,
     leadArchiveDir: path.resolve(__dirname, "..", "..", "outputs", "01a03663-35f2-70e2-848d-af024af190de"),
     spreadsheetNode: process.execPath,
+    adminExportToken: "",
   });
 });
 
@@ -26,9 +27,11 @@ test("allows the local Excel archive directory to be overridden", () => {
   const config = runtimeConfig({
     BRENA_LOCAL_LEADS_DIR: "C:\\Brena\\Leads",
     BRENA_SPREADSHEET_NODE: "C:\\Node\\node.exe",
+    BRENA_ADMIN_EXPORT_TOKEN: "local-export-token",
   });
   assert.equal(config.leadArchiveDir, path.resolve("C:\\Brena\\Leads"));
   assert.equal(config.spreadsheetNode, "C:\\Node\\node.exe");
+  assert.equal(config.adminExportToken, "local-export-token");
 });
 
 test("production refuses preview mode and missing BrenaV2 credentials", () => {

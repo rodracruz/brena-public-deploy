@@ -6,9 +6,7 @@ Sitio público de Brena para explicar el servicio y recibir solicitudes de propi
 
 - Node.js 20.18 o superior.
 - Cloudflare Tunnel para publicar desde un PC local.
-- El runtime de hojas de cálculo de Codex Desktop para mantener `Leads-Brena.xlsx`.
-
-El servidor no tiene dependencias npm de runtime.
+- Dependencias instaladas con `npm ci` para mantener `Leads-Brena.xlsx` de forma portable.
 
 ## Ejecutar localmente
 
@@ -37,7 +35,23 @@ powershell -ExecutionPolicy Bypass -File .\ops\check-brena-server.ps1
 
 El origen queda enlazado solamente a `127.0.0.1:3011`; Cloudflare entrega HTTPS sin abrir puertos del router. El enlace activo queda en `ops/runtime/PUBLIC-LINK.txt`. La carpeta `ops/runtime` también contiene logs y PIDs.
 
-El modo `local` trata cada formulario como un contacto real, lo agrega al registro acumulativo y actualiza el Excel. El libro nunca se publica por HTTP porque contiene datos personales.
+El modo `local` trata cada formulario como un contacto real, lo agrega al registro acumulativo y actualiza el Excel. El libro no se expone públicamente.
+
+## Respaldo del Excel desde Render
+
+Cuando `BRENA_ADMIN_EXPORT_TOKEN` contiene un secreto de al menos 32 caracteres, el servidor habilita `GET /admin/leads.xlsx`. La descarga exige `Authorization: Bearer <secreto>` y nunca se almacena en caché.
+
+En Windows, la copia local puede descargarse e instalarse como tarea periódica:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\ops\sync-render-leads.ps1 `
+  -ExportUrl https://brena.cl/admin/leads.xlsx
+
+powershell -ExecutionPolicy Bypass -File .\ops\install-lead-sync.ps1 `
+  -ExportUrl https://brena.cl/admin/leads.xlsx -IntervalMinutes 15
+```
+
+La credencial se guarda solo en `ops/runtime/render-export-token.txt`, carpeta excluida de Git. La tarea reemplaza el archivo local únicamente después de validar que la descarga tiene formato Excel.
 
 ## Configuración con BrenaV2
 
@@ -91,4 +105,4 @@ Consulta [docs/BRENA_V2_INTEGRATION.md](docs/BRENA_V2_INTEGRATION.md). Las crede
 - `src/local-lead-archive.js`: registro acumulativo de formularios locales.
 - `scripts/build-leads-workbook.mjs`: generación del archivo Excel.
 - `src/config.js`: configuración y fallos seguros de producción.
-- `ops/`: inicio, supervisión, salud, arranque al iniciar sesión y guía de migración.
+- `ops/`: inicio, supervisión, salud, sincronización del Excel, arranque al iniciar sesión y guía de migración.

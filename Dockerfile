@@ -7,6 +7,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --chown=node:node package.json package-lock.json ./
+RUN npm ci --omit=dev
 COPY --chown=node:node src ./src
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node frontend/public ./frontend/public

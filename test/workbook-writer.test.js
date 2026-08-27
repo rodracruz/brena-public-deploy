@@ -49,3 +49,51 @@ test("rejects when workbook generation exits unsuccessfully", async (t) => {
     /cannot export/,
   );
 });
+
+test("the production package builds a readable workbook without workspace-only tools", async (t) => {
+  const projectDir = path.join(__dirname, "..");
+  const packageJson = JSON.parse(await fs.readFile(path.join(projectDir, "package.json"), "utf8"));
+  assert.match(packageJson.dependencies?.exceljs || "", /^\^?4\./);
+
+  const dockerfile = await fs.readFile(path.join(projectDir, "Dockerfile"), "utf8");
+  assert.match(dockerfile, /RUN npm ci --omit=dev/);
+
+  const builderSource = await fs.readFile(
+    path.join(projectDir, "scripts", "build-leads-workbook.mjs"),
+    "utf8",
+  );
+  assert.doesNotMatch(builderSource, /^import .*@oai\/artifact-tool/m);
+
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "brena-portable-workbook-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const workbookPath = path.join(directory, "Leads-Brena.xlsx");
+  const writeWorkbook = createWorkbookWriter({
+    nodeExecutable: process.execPath,
+    scriptPath: path.join(projectDir, "scripts", "build-leads-workbook.mjs"),
+  });
+  await writeWorkbook({
+    workbookPath,
+    records: [{
+      submissionId: "lead-portable",
+      receivedAt: "2026-08-27T12:00:00.000Z",
+      preview: false,
+      lead: {
+        nombre_propietario: "María Pérez",
+        telefono: "+56912345678",
+        problema_principal: "herencia",
+        property: { comuna: "Ñuñoa" },
+        privacy: { consent: true },
+      },
+    }],
+  });
+
+  const signature = await fs.readFile(workbookPath);
+  assert.equal(signature.subarray(0, 2).toString("ascii"), "PK");
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(workbookPath);
+  const sheet = workbook.getWorksheet("Leads");
+  assert.equal(sheet.getCell("B5").value, "María Pérez");
+  assert.equal(sheet.getCell("J5").value, "Ñuñoa");
+  assert.equal(sheet.getCell("N5").value, "lead-portable");
+});
