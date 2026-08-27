@@ -716,7 +716,7 @@ h3 {
 }
 
 .principles span {
-  margin-bottom: auto;
+  margin-bottom: 28px;
   color: var(--clay-dark);
   font-family: Georgia, serif;
 }
