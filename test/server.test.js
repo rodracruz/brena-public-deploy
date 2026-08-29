@@ -116,6 +116,48 @@ test("serves the website and static assets with browser security headers", async
   });
 });
 
+test("serves disabled analytics runtime configuration without opening CSP", async () => {
+  await withServer({}, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/analytics-config.js`);
+    const body = await response.text();
+    const csp = response.headers.get("content-security-policy");
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/javascript/);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(
+      body,
+      'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":false,"provider":"none","measurementId":""});\n',
+    );
+    assert.equal(csp.includes("googletagmanager.com"), false);
+    assert.equal(csp.includes("google-analytics.com"), false);
+  });
+});
+
+test("exposes only a validated public GA4 ID and minimally extends CSP when enabled", async () => {
+  await withServer({
+    analyticsConfig: {
+      enabled: true,
+      provider: "ga4",
+      measurementId: "G-ABC1234567",
+    },
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/analytics-config.js`);
+    const body = await response.text();
+    const csp = response.headers.get("content-security-policy");
+
+    assert.equal(response.status, 200);
+    assert.equal(
+      body,
+      'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":true,"provider":"ga4","measurementId":"G-ABC1234567"});\n',
+    );
+    assert.match(csp, /script-src 'self' https:\/\/www\.googletagmanager\.com/);
+    assert.match(csp, /connect-src 'self' https:\/\/www\.google-analytics\.com https:\/\/region1\.google-analytics\.com/);
+    assert.equal(csp.includes("*"), false);
+    assert.equal(csp.includes("unsafe-eval"), false);
+  });
+});
+
 test("rejects traversal attempts instead of reading outside the public directory", async () => {
   await withServer({}, async (baseUrl) => {
     const response = await fetch(`${baseUrl}/..%2F..%2Fpackage.json`);

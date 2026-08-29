@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("node:path");
+const { resolveAnalyticsConfig } = require("./analytics-config");
 
 const DEFAULT_LEAD_ARCHIVE_DIR = path.resolve(
   __dirname,
@@ -69,6 +70,7 @@ function runtimeConfig(env = process.env) {
     leadArchiveDir: path.resolve(env.BRENA_LOCAL_LEADS_DIR || DEFAULT_LEAD_ARCHIVE_DIR),
     spreadsheetNode: env.BRENA_SPREADSHEET_NODE || process.execPath,
     adminExportToken: (env.BRENA_ADMIN_EXPORT_TOKEN || "").trim(),
+    analyticsConfig: resolveAnalyticsConfig(env),
   };
 }
 

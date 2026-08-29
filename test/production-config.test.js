@@ -20,6 +20,11 @@ test("uses a safe preview configuration for local development", () => {
     leadArchiveDir: path.resolve(__dirname, "..", "..", "outputs", "01a03663-35f2-70e2-848d-af024af190de"),
     spreadsheetNode: process.execPath,
     adminExportToken: "",
+    analyticsConfig: {
+      enabled: false,
+      provider: "none",
+      measurementId: "",
+    },
   });
 });
 

@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { validateLeadSubmission, toBrenaLead } = require("./lead-contract");
+const { disabledAnalyticsConfig } = require("./analytics-config");
 const { createRateLimiter } = require("./rate-limiter");
 const { securityHeaders } = require("./security-headers");
 
@@ -47,6 +48,18 @@ function writeJson(response, status, body, responseSecurityHeaders, extraHeaders
     ...extraHeaders,
   });
   response.end(payload);
+}
+
+function writeAnalyticsConfig(response, requestMethod, analyticsConfig, responseSecurityHeaders) {
+  const source = `window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze(${JSON.stringify(analyticsConfig)});\n`;
+  const payload = Buffer.from(source);
+  response.writeHead(200, {
+    ...responseSecurityHeaders,
+    "cache-control": "no-store",
+    "content-type": "text/javascript; charset=utf-8",
+    "content-length": payload.length,
+  });
+  response.end(requestMethod === "HEAD" ? undefined : payload);
 }
 
 function readJsonBody(request) {
@@ -240,6 +253,7 @@ function createServer({
   trustProxy = false,
   now = () => new Date(),
   logger = console,
+  analyticsConfig = disabledAnalyticsConfig(),
 } = {}) {
   if (!publicDir) throw new Error("publicDir is required");
   if (!brenaClient || typeof brenaClient.submit !== "function") {
@@ -262,11 +276,17 @@ function createServer({
     const { pathname } = requestUrl;
     const responseSecurityHeaders = securityHeaders({
       secure: requestIsSecure(request, trustProxy),
+      analyticsConfig,
     });
 
     try {
       if (request.method === "GET" && pathname === "/healthcheck") {
         writeJson(response, 200, { status: "ok" }, responseSecurityHeaders);
+        return;
+      }
+
+      if (["GET", "HEAD"].includes(request.method) && pathname === "/analytics-config.js") {
+        writeAnalyticsConfig(response, request.method, analyticsConfig, responseSecurityHeaders);
         return;
       }
 

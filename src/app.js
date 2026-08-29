@@ -36,6 +36,7 @@ const server = createServer({
     ? { token: config.adminExportToken, workbookPath }
     : undefined,
   trustProxy: config.trustProxy,
+  analyticsConfig: config.analyticsConfig,
 });
 
 async function start() {
