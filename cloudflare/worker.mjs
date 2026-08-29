@@ -2,6 +2,21 @@ const ORIGIN = new URL("https://brena-public-deploy.onrender.com");
 const CANONICAL_ORIGIN = "https://brena.cl";
 const CANONICAL_HOST = "brena.cl";
 const HSTS = "max-age=15552000";
+export const CANONICAL_PAGE_PATHS = Object.freeze([
+  "/",
+  "/vender-propiedad-rapido",
+  "/vender-propiedad-con-deudas",
+  "/vender-propiedad-en-mal-estado",
+]);
+export const PAGE_ALIAS_PATHS = new Map([
+  ["/index.html", "/"],
+  ["/vender-propiedad-rapido.html", "/vender-propiedad-rapido"],
+  ["/vender-propiedad-rapido/", "/vender-propiedad-rapido"],
+  ["/vender-propiedad-con-deudas.html", "/vender-propiedad-con-deudas"],
+  ["/vender-propiedad-con-deudas/", "/vender-propiedad-con-deudas"],
+  ["/vender-propiedad-en-mal-estado.html", "/vender-propiedad-en-mal-estado"],
+  ["/vender-propiedad-en-mal-estado/", "/vender-propiedad-en-mal-estado"],
+]);
 const QUERY_PRESERVING_EXTENSIONS = new Set([
   ".css",
   ".ico",
@@ -49,7 +64,7 @@ function publicQuery(incomingUrl, method) {
 
 function canonicalRedirect(incomingUrl, method) {
   const target = new URL(CANONICAL_ORIGIN);
-  target.pathname = incomingUrl.pathname === "/index.html" ? "/" : incomingUrl.pathname;
+  target.pathname = PAGE_ALIAS_PATHS.get(incomingUrl.pathname) || incomingUrl.pathname;
   target.search = publicQuery(incomingUrl, method);
   return target;
 }
@@ -77,7 +92,7 @@ export default {
       && !preservesFunctionalQuery(incomingUrl.pathname);
     const expectedQuery = publicQuery(incomingUrl, method);
     const needsCanonicalRedirect = incomingUrl.origin !== CANONICAL_ORIGIN
-      || incomingUrl.pathname === "/index.html"
+      || PAGE_ALIAS_PATHS.has(incomingUrl.pathname)
       || (normalizesNavigationQuery && incomingUrl.search !== expectedQuery);
 
     if (needsCanonicalRedirect) {

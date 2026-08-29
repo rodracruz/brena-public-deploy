@@ -5,6 +5,42 @@ async function loadWorker() {
   return (await import(`../cloudflare/worker.mjs?test=${Date.now()}-${Math.random()}`)).default;
 }
 
+async function loadWorkerModule() {
+  return import(`../cloudflare/worker.mjs?module=${Date.now()}-${Math.random()}`);
+}
+
+test("the Worker route tables match the four-page catalog", async () => {
+  const { CANONICAL_PAGE_PATHS, PAGE_ALIAS_PATHS } = await loadWorkerModule();
+  const { PAGES } = require("../src/public-pages/catalog");
+  assert.deepEqual([...CANONICAL_PAGE_PATHS], PAGES.map(({ route }) => route));
+  assert.deepEqual(Object.fromEntries(PAGE_ALIAS_PATHS), {
+    "/index.html": "/",
+    "/vender-propiedad-rapido.html": "/vender-propiedad-rapido",
+    "/vender-propiedad-rapido/": "/vender-propiedad-rapido",
+    "/vender-propiedad-con-deudas.html": "/vender-propiedad-con-deudas",
+    "/vender-propiedad-con-deudas/": "/vender-propiedad-con-deudas",
+    "/vender-propiedad-en-mal-estado.html": "/vender-propiedad-en-mal-estado",
+    "/vender-propiedad-en-mal-estado/": "/vender-propiedad-en-mal-estado",
+  });
+});
+
+test("the Worker canonicalizes commercial aliases in one safe redirect", async () => {
+  const worker = await loadWorker();
+  for (const input of [
+    "http://www.brena.cl/vender-propiedad-rapido.html?utm_source=google&email=ana%40example.cl",
+    "https://brena.cl/vender-propiedad-con-deudas/?utm_medium=cpc&phone=%2B56912345678",
+    "http://brena.cl/vender-propiedad-en-mal-estado/?utm_campaign=campaign-sale-2026&name=Ana",
+  ]) {
+    const response = await worker.fetch(new Request(input));
+    const source = new URL(input);
+    const expectedPath = source.pathname.replace(/\.html$|\/$/g, "") || "/";
+    const expectedQuery = [...source.searchParams].find(([key]) => key.startsWith("utm_"));
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get("location"), `https://brena.cl${expectedPath}?${expectedQuery[0]}=${encodeURIComponent(expectedQuery[1])}`);
+    assert.equal(response.headers.get("strict-transport-security"), source.protocol === "https:" ? "max-age=15552000" : null);
+  }
+});
+
 test("the Cloudflare worker redirects www to the canonical domain", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(new Request(
