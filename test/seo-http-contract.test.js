@@ -22,6 +22,7 @@ async function withServer(run) {
   try {
     await run(`http://127.0.0.1:${server.address().port}`);
   } finally {
+    server.closeIdleConnections?.();
     await new Promise((resolve) => server.close(resolve));
   }
 }
@@ -93,5 +94,62 @@ test("the origin removes index.html in one redirect and does not emit HSTS over 
     assert.equal(canonicalIndex.headers.get("strict-transport-security"), "max-age=15552000");
     assert.equal(plainHttp.status, 200);
     assert.equal(plainHttp.headers.get("strict-transport-security"), null);
+  });
+});
+
+test("the homepage declares one exact canonical URL and matching Open Graph URL", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/`, { headers: edgeHeaders });
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(html, /<html lang="es-CL">/);
+    assert.match(html, /<link rel="canonical" href="https:\/\/brena\.cl\/">/);
+    assert.match(html, /<meta property="og:url" content="https:\/\/brena\.cl\/">/);
+    assert.equal((html.match(/rel="canonical"/g) || []).length, 1);
+  });
+});
+
+test("robots allows the public site and references the canonical sitemap", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/robots.txt`, { headers: edgeHeaders });
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/plain/);
+    assert.match(body, /^User-agent: \*$/m);
+    assert.match(body, /^Allow: \/$/m);
+    assert.match(body, /^Sitemap: https:\/\/brena\.cl\/sitemap\.xml$/m);
+    assert.doesNotMatch(body, /^Disallow: \/$/m);
+  });
+});
+
+test("the sitemap contains only the canonical indexable homepage", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/sitemap.xml`, { headers: edgeHeaders });
+    const xml = await response.text();
+    const locations = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^application\/xml/);
+    assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+    assert.deepEqual(locations, ["https://brena.cl/"]);
+    assert.equal(xml.includes("index.html"), false);
+    assert.equal(xml.includes("success.html"), false);
+    assert.equal(xml.includes("<lastmod>"), false);
+  });
+});
+
+test("the legacy success document stays functional but cannot be indexed", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/success.html`, { headers: edgeHeaders });
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(html, /<html lang="es-CL">/);
+    assert.match(html, /<meta name="robots" content="noindex, follow">/);
+    assert.match(html, /src="\/brena\.png"/);
+    assert.equal(html.includes("fonts.googleapis.com"), false);
+    assert.equal(html.includes("rel=\"canonical\""), false);
   });
 });
