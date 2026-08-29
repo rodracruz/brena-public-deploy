@@ -1,0 +1,120 @@
+<form id="lead-form" method="post" action="/api/leads" novalidate>
+            <div class="form-error-summary" data-error-summary role="alert" tabindex="-1" hidden></div>
+
+            <fieldset class="form-step" data-form-step="1">
+              <legend>Primero, cuéntanos sobre la propiedad</legend>
+              <p class="step-help">Selecciona las opciones que más se acercan a tu situación.</p>
+
+              <div class="field-group">
+                <span class="field-label">¿Qué está pasando? <em>*</em></span>
+                <div class="choice-grid choice-grid-situations">
+                  <label><input type="radio" name="situation" value="mora_hipotecaria" required><span>Deuda hipotecaria</span></label>
+                  <label><input type="radio" name="situation" value="propiedad_abandonada"><span>Está desocupada</span></label>
+                  <label><input type="radio" name="situation" value="herencia"><span>Herencia o copropiedad</span></label>
+                  <label><input type="radio" name="situation" value="falta_liquidez"><span>Gastos acumulados</span></label>
+                  <label><input type="radio" name="situation" value="necesita_vender_rapido"><span>Necesito vender pronto</span></label>
+                  <label><input type="radio" name="situation" value="otro"><span>Otra situación</span></label>
+                </div>
+                <small class="field-error" data-error-for="situation"></small>
+              </div>
+
+              <div class="field-row">
+                <label class="field">Tipo de propiedad <em>*</em>
+                  <select name="propertyType" required>
+                    <option value="">Selecciona</option>
+                    <option value="casa">Casa</option>
+                    <option value="departamento">Departamento</option>
+                    <option value="terreno">Terreno</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                  <small class="field-error" data-error-for="propertyType"></small>
+                </label>
+                <label class="field">Región <em>*</em>
+                  <select name="region" required>
+                    <option value="">Selecciona</option>
+                    <option value="arica_parinacota">Arica y Parinacota</option>
+                    <option value="tarapaca">Tarapacá</option>
+                    <option value="antofagasta">Antofagasta</option>
+                    <option value="atacama">Atacama</option>
+                    <option value="coquimbo">Coquimbo</option>
+                    <option value="valparaiso">Valparaíso</option>
+                    <option value="metropolitana">Metropolitana</option>
+                    <option value="ohiggins">O’Higgins</option>
+                    <option value="maule">Maule</option>
+                    <option value="nuble">Ñuble</option>
+                    <option value="biobio">Biobío</option>
+                    <option value="araucania">La Araucanía</option>
+                    <option value="los_rios">Los Ríos</option>
+                    <option value="los_lagos">Los Lagos</option>
+                    <option value="aysen">Aysén</option>
+                    <option value="magallanes">Magallanes</option>
+                  </select>
+                  <small class="field-error" data-error-for="region"></small>
+                </label>
+              </div>
+
+              <div class="field-row">
+                <label class="field">Comuna <em>*</em>
+                  <input type="text" name="commune" autocomplete="address-level2" maxlength="100" placeholder="Ej. Ñuñoa" required>
+                  <small class="field-error" data-error-for="commune"></small>
+                </label>
+                <label class="field">¿Cuándo necesitas resolverlo? <em>*</em>
+                  <select name="urgency" required>
+                    <option value="">Selecciona</option>
+                    <option value="sin_apuro">Estoy explorando opciones</option>
+                    <option value="proximos_3_meses">Dentro de 3 meses</option>
+                    <option value="proximo_mes">Durante el próximo mes</option>
+                    <option value="urgente">Lo antes posible</option>
+                  </select>
+                  <small class="field-error" data-error-for="urgency"></small>
+                </label>
+              </div>
+
+              <div class="form-actions form-actions-end">
+                <button class="button button-primary" type="button" data-next-step>Continuar <span aria-hidden="true">→</span></button>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-step" data-form-step="2" hidden>
+              <legend>¿Cómo podemos contactarte?</legend>
+              <p class="step-help">Necesitamos al menos un teléfono o correo válido.</p>
+
+              <label class="field">Nombre <em>*</em>
+                <input type="text" name="name" autocomplete="name" maxlength="100" placeholder="Tu nombre" required>
+                <small class="field-error" data-error-for="name"></small>
+              </label>
+
+              <div class="field-row">
+                <label class="field">Teléfono
+                  <input type="tel" name="phone" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+56 9 1234 5678">
+                  <small class="field-error" data-error-for="phone"></small>
+                </label>
+                <label class="field">Correo electrónico
+                  <input type="email" name="email" autocomplete="email" maxlength="160" placeholder="nombre@correo.cl">
+                  <small class="field-error" data-error-for="email"></small>
+                </label>
+              </div>
+              <small class="field-error contact-error" data-error-for="contact"></small>
+
+              <label class="field">¿Hay algo más que debamos saber? <span>(opcional)</span>
+                <textarea name="message" rows="4" maxlength="1200" placeholder="Puedes contarnos brevemente qué está pasando"></textarea>
+                <small class="field-error" data-error-for="message"></small>
+              </label>
+
+              <label class="honeypot" aria-hidden="true">Sitio web
+                <input type="text" name="website" tabindex="-1" autocomplete="off">
+              </label>
+
+              <label class="consent-row">
+                <input type="checkbox" name="consent" required>
+                <span>Autorizo a Brena a usar estos datos para analizar mi solicitud y contactarme. He leído el <a href="#privacidad">aviso de privacidad</a>. <em>*</em></span>
+              </label>
+              <small class="field-error" data-error-for="consent"></small>
+
+              <div class="form-actions">
+                <button class="text-button" type="button" data-previous-step><span aria-hidden="true">←</span> Volver</button>
+                <button class="button button-primary" type="submit" data-submit-button>Enviar mi caso <span aria-hidden="true">↗</span></button>
+              </div>
+            </fieldset>
+            <p class="form-status" data-form-status role="status" aria-live="polite"></p>
+          </form>

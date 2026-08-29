@@ -6,6 +6,7 @@
   "main": "src/app.js",
   "license": "UNLICENSED",
   "scripts": {
+    "build": "node scripts/build-public-pages.js",
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
     "test": "node --test",

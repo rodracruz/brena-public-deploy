@@ -104,10 +104,10 @@ test("serves the website and static assets with browser security headers", async
     assert.match(html, /<form[^>]+id="lead-form"/);
     assert.match(html, /name="situation"/);
     assert.match(html, /name="consent"/);
-    assert.match(html, /href="\/styles\.css\?v=2\.0\.1"/);
+    assert.match(html, /href="\/styles\.css\?v=3\.0\.0"/);
     assert.match(html, /src="\/analytics-config\.js"/);
-    assert.match(html, /src="\/analytics\.js\?v=3\.0\.0"/);
-    assert.match(html, /src="\/scripts\.js\?v=3\.0\.0"/);
+    assert.match(html, /src="\/analytics\.js\?v=3\.1\.0"/);
+    assert.match(html, /src="\/scripts\.js\?v=3\.1\.0"/);
     assert.match(html, /data-analytics-cta-id="hero_form"/);
     assert.equal(html.includes("fonts.googleapis.com"), false);
     assert.equal(html.includes("NO esperes a quedar marcado en DICOM"), false);

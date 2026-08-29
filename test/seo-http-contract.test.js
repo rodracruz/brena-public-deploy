@@ -103,7 +103,7 @@ test("the homepage declares one exact canonical URL and matching Open Graph URL"
     const html = await response.text();
 
     assert.equal(response.status, 200);
-    assert.match(html, /<html lang="es-CL">/);
+    assert.match(html, /<html lang="es-CL" data-page-type="homepage">/);
     assert.match(html, /<link rel="canonical" href="https:\/\/brena\.cl\/">/);
     assert.match(html, /<meta property="og:url" content="https:\/\/brena\.cl\/">/);
     assert.equal((html.match(/rel="canonical"/g) || []).length, 1);
@@ -125,7 +125,7 @@ test("robots allows the public site and references the canonical sitemap", async
   });
 });
 
-test("the sitemap contains only the canonical indexable homepage", async () => {
+test("the sitemap contains exactly the four canonical indexable pages", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/sitemap.xml`, { headers: edgeHeaders });
     const xml = await response.text();
@@ -134,7 +134,12 @@ test("the sitemap contains only the canonical indexable homepage", async () => {
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /^application\/xml/);
     assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
-    assert.deepEqual(locations, ["https://brena.cl/"]);
+    assert.deepEqual(locations, [
+      "https://brena.cl/",
+      "https://brena.cl/vender-propiedad-rapido",
+      "https://brena.cl/vender-propiedad-con-deudas",
+      "https://brena.cl/vender-propiedad-en-mal-estado",
+    ]);
     assert.equal(xml.includes("index.html"), false);
     assert.equal(xml.includes("success.html"), false);
     assert.equal(xml.includes("<lastmod>"), false);
@@ -160,8 +165,8 @@ test("the disabled analytics bundle is delivered same-origin without relaxing CS
     const [page, config, analytics, product] = await Promise.all([
       fetch(`${baseUrl}/`, { headers: edgeHeaders }),
       fetch(`${baseUrl}/analytics-config.js`, { headers: edgeHeaders }),
-      fetch(`${baseUrl}/analytics.js?v=3.0.0`, { headers: edgeHeaders }),
-      fetch(`${baseUrl}/scripts.js?v=3.0.0`, { headers: edgeHeaders }),
+      fetch(`${baseUrl}/analytics.js?v=3.1.0`, { headers: edgeHeaders }),
+      fetch(`${baseUrl}/scripts.js?v=3.1.0`, { headers: edgeHeaders }),
     ]);
     const html = await page.text();
     const configSource = await config.text();
@@ -177,8 +182,8 @@ test("the disabled analytics bundle is delivered same-origin without relaxing CS
       'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":false,"provider":"none","measurementId":""});\n',
     );
     assert.match(html, /<script src="\/analytics-config\.js" defer><\/script>/);
-    assert.match(html, /<script src="\/analytics\.js\?v=3\.0\.0" defer><\/script>/);
-    assert.match(html, /<script src="\/scripts\.js\?v=3\.0\.0" defer><\/script>/);
+    assert.match(html, /<script src="\/analytics\.js\?v=3\.1\.0" defer><\/script>/);
+    assert.match(html, /<script src="\/scripts\.js\?v=3\.1\.0" defer><\/script>/);
     assert.equal(csp.includes("googletagmanager.com"), false);
     assert.equal(csp.includes("google-analytics.com"), false);
     assert.equal(csp.includes("*"), false);
