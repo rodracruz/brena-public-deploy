@@ -1,8 +1,11 @@
 # BRENA-WEB-SEO-002 — Fundación técnica
 
-Fecha: 2026-08-29  
-Repositorio: `rodracruz/brena-public-deploy`  
-Base: `90da5cfa9e1e035bb8b5d0536464c530ae97919e`  
+Fecha: 2026-08-29
+
+Repositorio: `rodracruz/brena-public-deploy`
+
+Base: `90da5cfa9e1e035bb8b5d0536464c530ae97919e`
+
 Dominio canónico: `https://brena.cl`
 
 ## Objetivo y alcance
@@ -21,7 +24,8 @@ La política de headers quedó centralizada en `src/security-headers.js`. La met
 ## HTTPS y canonicalización
 
 - HTTP, `www`, `/index.html` y cualquier hostname que atraviese el Worker convergen mediante 308 hacia `https://brena.cl`.
-- Se preservan exclusivamente `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` y `utm_term`, con 120 caracteres máximos por valor. Queries desconocidas o potencialmente personales se eliminan en redirects de navegación.
+- En navegaciones públicas se preservan exclusivamente `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` y `utm_term`, con 120 caracteres máximos por valor. Queries desconocidas o potencialmente personales se eliminan.
+- Assets con extensiones versionadas conocidas y `healthcheck` preservan sus queries funcionales; `/api/leads` elimina siempre su query antes de llegar a Render, sin perder método ni body.
 - El destino se construye desde una constante; no acepta un host o destino aportado por el usuario, por lo que no introduce un open redirect.
 - Una petición ya canónica se entrega al origen sin redirect ni cadena adicional.
 - `/index.html` converge directamente en `/`, también en la defensa del servidor.
@@ -64,7 +68,8 @@ Después:
 - JavaScript mantiene su `POST` JSON existente y la confirmación inline;
 - cliente y servidor aceptan solo URLs HTTP(S) y eliminan credenciales, query y fragmento de `pageUrl`/`referrer`;
 - UTM permanece separada en la allowlist ya existente;
-- redirects navegables conservan solo esa allowlist y nunca trasladan nombre, correo, teléfono, dirección u otros parámetros desconocidos.
+- redirects navegables conservan solo esa allowlist y nunca trasladan nombre, correo, teléfono, dirección u otros parámetros desconocidos;
+- el Worker elimina queries de `/api/leads` antes de construir la solicitud al origen, evitando PII en access logs de Render.
 
 No se añadió almacenamiento ni se modificó el backend BRENA-V2.
 
@@ -89,7 +94,7 @@ Baseline:
 - `npm test`: 45/45.
 - `npm audit`: 0 vulnerabilidades.
 
-Se agregaron contratos que cubren redirects del Worker, ausencia de loops, HSTS condicionado, host canónico/origen, `/index.html`, canonical/OG, robots, sitemap, success noindex, CSP restrictiva, método del formulario y saneamiento doble de contexto URL. La regresión posterior a la implementación alcanzó 56/56 pruebas.
+Se agregaron contratos que cubren redirects del Worker, ausencia de loops, HSTS condicionado, origin/puerto canónico, queries versionadas de assets, queries técnicas, API sin query, host canónico/origen, `/index.html`, canonical/OG, robots, sitemap, success noindex, CSP restrictiva, método del formulario y saneamiento doble de contexto URL. La regresión posterior a la revisión alcanzó 58/58 pruebas.
 
 Además se levantó `src/app.js` localmente en modo preview, sin archivo ni transmisión de leads, y se ejecutaron peticiones HTTP reales con distintos `Host`, `X-Forwarded-Host`, `X-Forwarded-Proto`, paths y queries. Se observaron:
 
@@ -108,6 +113,16 @@ Además se levantó `src/app.js` localmente en modo preview, sin archivo ni tran
 - La CSP continúa bloqueando el beacon analítico previamente inyectado por Cloudflare; resolver medición corresponde a BRENA-WEB-SEO-003.
 - El fallback sin JavaScript hace POST a un endpoint JSON y recibirá 415 en lugar de confirmar el lead; su propósito en 002 es impedir PII en URL. Crear una experiencia no-JS completa queda fuera del alcance.
 
+## Revisión independiente
+
+La revisión read-only del rango completo encontró 0 Critical, 2 Important y 1 Minor:
+
+1. GET/HEAD limpiaba `?v=` de CSS/JS al confundir recursos con navegación.
+2. POST `/api/leads` reenviaba su query completa a Render.
+3. Un puerto HTTPS alternativo no se consideraba un origin distinto.
+
+Los tres findings fueron reproducidos con pruebas RED. La corrección clasifica queries por superficie, elimina la query de leads antes del upstream y compara el `origin` completo. Después quedaron 7/7 contratos Worker y 58/58 pruebas totales. No quedan Critical ni Important abiertos en código.
+
 ## REQUIERE VERIFICACIÓN POST-DEPLOY
 
 Sin desplegar no puede demostrarse el comportamiento final de las plataformas. Después de un deployment autorizado se debe verificar exactamente:
@@ -119,7 +134,7 @@ Sin desplegar no puede demostrarse el comportamiento final de las plataformas. D
 5. El `X-Forwarded-Host` enviado por Worker llega a Node sin ser reemplazado por Render.
 6. `robots.txt` live corresponde al archivo versionado y no a una variante administrada incompatible de Cloudflare.
 7. `sitemap.xml` live responde 200 XML y solo lista la homepage.
-8. La CSP live coincide con la política central, los assets cargan sin errores y el beacon de analítica sigue deliberadamente no habilitado.
+8. La CSP live coincide con la política central, los assets `styles.css?v=2.0.1` y `scripts.js?v=2.0.1` cargan directamente sin redirect, y el beacon de analítica sigue deliberadamente no habilitado.
 9. Un lead sintético autorizado se envía por POST, confirma éxito real y no deja PII en location, history, referrer ni logs deliberados de aplicación.
 
 No se ejecutó ninguna de estas verificaciones mediante deployment en este ticket.
