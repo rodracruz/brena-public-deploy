@@ -98,7 +98,7 @@ test("serves the website and static assets with browser security headers", async
     assert.match(page.headers.get("content-security-policy"), /default-src 'self'/);
     assert.equal(page.headers.get("x-content-type-options"), "nosniff");
     assert.equal(page.headers.get("x-frame-options"), "DENY");
-    assert.equal(page.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+    assert.equal(page.headers.get("referrer-policy"), "strict-origin");
     assert.match(html, /<title>Brena \| Soluciones para propiedades complejas<\/title>/);
     assert.match(html, /<main id="contenido">/);
     assert.match(html, /<form[^>]+id="lead-form"/);

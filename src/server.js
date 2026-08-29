@@ -7,6 +7,7 @@ const path = require("node:path");
 
 const { validateLeadSubmission, toBrenaLead } = require("./lead-contract");
 const { createRateLimiter } = require("./rate-limiter");
+const { securityHeaders } = require("./security-headers");
 
 const MAX_BODY_BYTES = 16 * 1024;
 
@@ -23,18 +24,21 @@ const MIME_TYPES = Object.freeze({
   ".webp": "image/webp",
 });
 
-const SECURITY_HEADERS = Object.freeze({
-  "content-security-policy": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
-  "permissions-policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
-  "referrer-policy": "strict-origin-when-cross-origin",
-  "x-content-type-options": "nosniff",
-  "x-frame-options": "DENY",
-});
+const CANONICAL_ORIGIN = "https://brena.cl";
+const RENDER_ORIGIN_HOST = "brena-public-deploy.onrender.com";
+const PUBLIC_DOCUMENTS = new Set(["/", "/index.html", "/success.html"]);
+const ATTRIBUTION_KEYS = Object.freeze([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+]);
 
-function writeJson(response, status, body, extraHeaders = {}) {
+function writeJson(response, status, body, responseSecurityHeaders, extraHeaders = {}) {
   const payload = Buffer.from(JSON.stringify(body));
   response.writeHead(status, {
-    ...SECURITY_HEADERS,
+    ...responseSecurityHeaders,
     "cache-control": "no-store",
     "content-type": "application/json; charset=utf-8",
     "content-length": payload.length,
@@ -86,6 +90,56 @@ function clientAddress(request, trustProxy) {
   return request.socket.remoteAddress || "unknown";
 }
 
+function firstHeaderValue(value) {
+  return typeof value === "string" ? value.split(",")[0].trim().toLowerCase() : "";
+}
+
+function hostnameFromHeader(value) {
+  const candidate = firstHeaderValue(value);
+  if (!candidate) return "";
+  try {
+    return new URL(`http://${candidate}`).hostname;
+  } catch {
+    return "";
+  }
+}
+
+function requestIsSecure(request, trustProxy) {
+  return trustProxy && firstHeaderValue(request.headers["x-forwarded-proto"]) === "https";
+}
+
+function safeAttributionSearch(searchParams) {
+  const safe = new URLSearchParams();
+  for (const key of ATTRIBUTION_KEYS) {
+    const value = searchParams.get(key)?.trim().slice(0, 120);
+    if (value) safe.set(key, value);
+  }
+  const query = safe.toString();
+  return query ? `?${query}` : "";
+}
+
+function isDirectRenderDocument(request, trustProxy, pathname) {
+  if (!PUBLIC_DOCUMENTS.has(pathname)) return false;
+  const requestHost = hostnameFromHeader(request.headers.host);
+  const forwardedHost = trustProxy
+    ? hostnameFromHeader(request.headers["x-forwarded-host"])
+    : "";
+  return requestHost === RENDER_ORIGIN_HOST && forwardedHost !== "brena.cl";
+}
+
+function writeCanonicalRedirect(response, requestUrl, responseSecurityHeaders) {
+  const target = new URL(CANONICAL_ORIGIN);
+  target.pathname = requestUrl.pathname === "/index.html" ? "/" : requestUrl.pathname;
+  target.search = safeAttributionSearch(requestUrl.searchParams);
+  response.writeHead(308, {
+    ...responseSecurityHeaders,
+    "cache-control": "public, max-age=3600",
+    "content-length": "0",
+    location: target.toString(),
+  });
+  response.end();
+}
+
 function safePublicFile(publicDir, pathname) {
   let decoded;
   try {
@@ -101,7 +155,7 @@ function safePublicFile(publicDir, pathname) {
   return candidate;
 }
 
-async function serveStatic(request, response, publicDir, pathname) {
+async function serveStatic(request, response, publicDir, pathname, responseSecurityHeaders) {
   const filePath = safePublicFile(publicDir, pathname);
   if (!filePath) return false;
 
@@ -117,7 +171,7 @@ async function serveStatic(request, response, publicDir, pathname) {
   const contentType = MIME_TYPES[extension] || "application/octet-stream";
   const shouldRevalidate = [".html", ".css", ".js"].includes(extension);
   response.writeHead(200, {
-    ...SECURITY_HEADERS,
+    ...responseSecurityHeaders,
     "cache-control": shouldRevalidate ? "no-cache" : "public, max-age=3600",
     "content-type": contentType,
     "content-length": stat.size,
@@ -138,9 +192,9 @@ function authorizedForExport(request, expectedToken) {
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 }
 
-async function serveWorkbookExport(request, response, adminExport) {
+async function serveWorkbookExport(request, response, adminExport, responseSecurityHeaders) {
   if (!authorizedForExport(request, adminExport.token)) {
-    writeJson(response, 401, { ok: false, message: "Acceso no autorizado." }, {
+    writeJson(response, 401, { ok: false, message: "Acceso no autorizado." }, responseSecurityHeaders, {
       "www-authenticate": "Bearer",
     });
     return;
@@ -151,18 +205,18 @@ async function serveWorkbookExport(request, response, adminExport) {
     stat = await fs.promises.stat(adminExport.workbookPath);
   } catch (error) {
     if (error?.code === "ENOENT") {
-      writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." });
+      writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." }, responseSecurityHeaders);
       return;
     }
     throw error;
   }
   if (!stat.isFile()) {
-    writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." });
+    writeJson(response, 404, { ok: false, message: "Aún no hay un archivo disponible." }, responseSecurityHeaders);
     return;
   }
 
   response.writeHead(200, {
-    ...SECURITY_HEADERS,
+    ...responseSecurityHeaders,
     "cache-control": "no-store",
     "content-disposition": 'attachment; filename="Leads-Brena.xlsx"',
     "content-length": stat.size,
@@ -204,17 +258,20 @@ function createServer({
   return http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url || "/", "http://localhost");
     const { pathname } = requestUrl;
+    const responseSecurityHeaders = securityHeaders({
+      secure: requestIsSecure(request, trustProxy),
+    });
 
     try {
       if (request.method === "GET" && pathname === "/healthcheck") {
-        writeJson(response, 200, { status: "ok" });
+        writeJson(response, 200, { status: "ok" }, responseSecurityHeaders);
         return;
       }
 
       if (["GET", "HEAD"].includes(request.method)
         && pathname === "/admin/leads.xlsx"
         && adminExport) {
-        await serveWorkbookExport(request, response, adminExport);
+        await serveWorkbookExport(request, response, adminExport, responseSecurityHeaders);
         return;
       }
 
@@ -224,13 +281,13 @@ function createServer({
           writeJson(response, 429, {
             ok: false,
             message: "Recibimos varias solicitudes. Intenta nuevamente en un momento.",
-          }, { "retry-after": String(rate.retryAfter) });
+          }, responseSecurityHeaders, { "retry-after": String(rate.retryAfter) });
           return;
         }
 
         const contentType = String(request.headers["content-type"] || "").split(";")[0].trim();
         if (contentType !== "application/json") {
-          writeJson(response, 415, { ok: false, message: "El formato enviado no es compatible." });
+          writeJson(response, 415, { ok: false, message: "El formato enviado no es compatible." }, responseSecurityHeaders);
           return;
         }
 
@@ -240,7 +297,7 @@ function createServer({
           writeJson(response, 202, {
             ok: true,
             message: "Recibimos tus datos. El equipo Brena revisará tu caso.",
-          });
+          }, responseSecurityHeaders);
           return;
         }
         if (!validation.ok) {
@@ -248,7 +305,7 @@ function createServer({
             ok: false,
             message: "Revisa los datos marcados.",
             errors: validation.errors,
-          });
+          }, responseSecurityHeaders);
           return;
         }
 
@@ -280,16 +337,31 @@ function createServer({
           submissionId: result.id,
           preview: result.preview,
           message: "Recibimos tus datos. El equipo Brena revisará tu caso.",
-        });
+        }, responseSecurityHeaders);
         return;
       }
 
       if (["GET", "HEAD"].includes(request.method)) {
-        const served = await serveStatic(request, response, publicDir, pathname);
+        const safeSearch = safeAttributionSearch(requestUrl.searchParams);
+        const needsDocumentRedirect = pathname === "/index.html"
+          || (PUBLIC_DOCUMENTS.has(pathname) && requestUrl.search !== safeSearch)
+          || isDirectRenderDocument(request, trustProxy, pathname);
+        if (needsDocumentRedirect) {
+          writeCanonicalRedirect(response, requestUrl, responseSecurityHeaders);
+          return;
+        }
+
+        const served = await serveStatic(
+          request,
+          response,
+          publicDir,
+          pathname,
+          responseSecurityHeaders,
+        );
         if (served) return;
       }
 
-      writeJson(response, 404, { ok: false, message: "No encontramos esta página." });
+      writeJson(response, 404, { ok: false, message: "No encontramos esta página." }, responseSecurityHeaders);
     } catch (error) {
       const status = Number.isInteger(error?.status) ? error.status : 500;
       if (status >= 500) {
@@ -305,7 +377,7 @@ function createServer({
           : status >= 500
             ? "No pudimos recibir tus datos en este momento. Intenta nuevamente."
             : "No pudimos procesar la solicitud.",
-      });
+      }, responseSecurityHeaders);
     }
   });
 }
