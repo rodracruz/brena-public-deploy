@@ -33,7 +33,8 @@ El código de la página y del formulario no llamará directamente a `gtag`, `da
 El servidor derivará una configuración pública desde:
 
 - `BRENA_ANALYTICS_ENABLED`;
-- `BRENA_GA4_MEASUREMENT_ID`.
+- `BRENA_GA4_MEASUREMENT_ID`;
+- `BRENA_ANALYTICS_UTM_ALLOWLIST_JSON`.
 
 El proveedor solo se considera habilitado cuando el flag es exactamente válido y el Measurement ID satisface el formato esperado. Configuración ausente, parcial o inválida produce un modo deshabilitado seguro: no carga scripts externos, no envía eventos y no amplía CSP.
 
@@ -43,15 +44,16 @@ La configuración pública se entregará desde un endpoint JavaScript same-origi
 
 GA4 será el primer adaptador. Cuando esté habilitado:
 
+- exige una señal de consentimiento analítico explícita e independiente antes de crear `dataLayer` o cargar `gtag.js`;
 - crea la cola `dataLayer` antes de cargar la biblioteca;
 - configura `send_page_view: false` para evitar doble conteo;
-- establece antes de cualquier comando los cuatro estados de Consent Mode en `denied`, por lo que el adaptador no crea cookies analíticas;
-- fija `page_location` a la URL canónica sin query y desactiva el referrer automático;
+- fija globalmente `page_location` a la URL canónica sin query y `page_referrer` vacío antes de inicializar GA4;
+- establece los cuatro estados de Consent Mode en `denied`, por lo que el adaptador no crea cookies analíticas;
 - envía `page_view` exclusivamente mediante la capa central;
 - carga `gtag.js` desde el origen oficial exacto;
 - nunca incluye campos no aprobados.
 
-En el estado de cierre de este ticket GA4 seguirá deshabilitado. La casilla de autorización de contacto no se reutiliza como consentimiento analítico.
+En el estado de cierre de este ticket GA4 seguirá deshabilitado. La casilla de autorización de contacto no se reutiliza como consentimiento analítico y ningún código actual establece la señal `__BRENA_ANALYTICS_CONSENT_GRANTED__`.
 
 ### CSP
 
@@ -83,10 +85,10 @@ La estrategia es last-touch de sesión:
 
 1. Al cargar, se leen exclusivamente `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` y `utm_term`.
 2. Si existe al menos una UTM válida, reemplaza la atribución guardada para esa sesión.
-3. Si no existen UTM válidas, se reutiliza la atribución segura ya guardada.
+3. Si la URL no contiene UTM, se reutiliza la atribución segura ya guardada; si contiene UTM pero ninguna está autorizada, se borra la atribución anterior.
 4. Datos malformados o contaminados en `sessionStorage` se descartan.
 
-Los valores no son texto libre. `utm_source` y `utm_medium` usan vocabularios cerrados de canales; campaña, contenido y término usan códigos ASCII con prefijos `cmp_`, `cnt_` y `trm_`. No se aceptan parámetros arbitrarios, `gclid`, nombres, correos, teléfonos, direcciones, RUT, montos ni texto libre.
+Los valores no son texto libre ni se aceptan mediante patrones. Las cinco dimensiones usan una allowlist exacta entregada por configuración, completa y cerrada. Un valor presente en la URL o en `sessionStorage` solo sobrevive si coincide byte por byte con un valor previamente aprobado. Sin taxonomía configurada, las cinco listas están vacías. No se aceptan parámetros arbitrarios, `gclid`, nombres, correos, teléfonos, direcciones, RUT, montos ni texto libre.
 
 El referrer se reduce a hostname normalizado de una URL HTTP(S). Se eliminan path, query, fragment, credenciales y puerto.
 
@@ -114,7 +116,7 @@ Queda prohibido en payloads, labels, dimensions y referrers:
 - URL o referrer completo;
 - claves arbitrarias.
 
-La persistencia se limita a `sessionStorage` y solo contiene la allowlist UTM saneada. No se crean cookies ni almacenamiento persistente.
+La persistencia se limita a `sessionStorage`, solo después de configuración válida y consentimiento analítico explícito, y solo contiene valores de la allowlist UTM. No se crean cookies ni almacenamiento persistente.
 
 ## Search Console
 

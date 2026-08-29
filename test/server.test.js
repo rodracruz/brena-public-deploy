@@ -143,6 +143,13 @@ test("exposes only a validated public GA4 ID and minimally extends CSP when enab
       enabled: true,
       provider: "ga4",
       measurementId: "G-ABC1234567",
+      attributionAllowlist: {
+        utm_source: ["google"],
+        utm_medium: ["cpc"],
+        utm_campaign: [],
+        utm_content: [],
+        utm_term: [],
+      },
     },
   }, async (baseUrl) => {
     const response = await fetch(`${baseUrl}/analytics-config.js`);
@@ -152,7 +159,7 @@ test("exposes only a validated public GA4 ID and minimally extends CSP when enab
     assert.equal(response.status, 200);
     assert.equal(
       body,
-      'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":true,"provider":"ga4","measurementId":"G-ABC1234567"});\n',
+      'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":true,"provider":"ga4","measurementId":"G-ABC1234567","attributionAllowlist":{"utm_source":["google"],"utm_medium":["cpc"],"utm_campaign":[],"utm_content":[],"utm_term":[]}});\n',
     );
     assert.match(csp, /script-src 'self' https:\/\/www\.googletagmanager\.com/);
     assert.match(csp, /connect-src 'self' https:\/\/www\.google-analytics\.com https:\/\/region1\.google-analytics\.com/);

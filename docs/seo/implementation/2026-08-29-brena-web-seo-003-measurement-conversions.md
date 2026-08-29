@@ -16,7 +16,7 @@ Este ticket incorpora medición centralizada de adquisición, CTA y funnel del f
 
 La solución tiene tres límites explícitos:
 
-1. `src/analytics-config.js` valida la configuración runtime. Solo un flag explícito y un Measurement ID con formato GA4 habilitan el proveedor.
+1. `src/analytics-config.js` valida la configuración runtime. Solo un flag explícito y un Measurement ID con formato GA4 habilitan el proveedor; la taxonomía UTM se publica como allowlist exacta y vacía por defecto.
 2. `src/server.js` entrega `/analytics-config.js` como JavaScript same-origin, `no-store`, y `src/security-headers.js` deriva una CSP acorde al modo efectivo.
 3. `frontend/public/analytics.js` es la única API analítica. Posee schemas, saneamiento, atribución de sesión y adaptador GA4. `frontend/public/scripts.js` solo emite eventos semánticos mediante esa API.
 
@@ -34,9 +34,9 @@ GA4 queda deshabilitada por defecto. Con la configuración actual:
 - no se envía tráfico externo;
 - la CSP conserva exactamente sus orígenes de SEO-002.
 
-El adaptador configurado usa `send_page_view:false`; la única page view procede de la capa central para evitar doble conteo.
+El adaptador configurado usa `send_page_view:false`; la única page view procede de la capa central para evitar doble conteo. Aun con flag e ID válidos, el navegador no crea `dataLayer`, no carga `gtag.js` y no toca `sessionStorage` hasta recibir una señal independiente `__BRENA_ANALYTICS_CONSENT_GRANTED__ === true`. Ningún código de este ticket establece esa señal.
 
-Antes de `config` se encolan `ad_storage`, `ad_user_data`, `ad_personalization` y `analytics_storage` como `denied`. La configuración también deshabilita señales publicitarias, ignora el referrer automático y reemplaza `page_location` por `https://brena.cl` más el pathname saneado, sin query ni fragment. Esto deja el modo futuro sin cookies analíticas persistentes ni URLs completas; Google recibirá únicamente mediciones cookieless cuando Rodrigo autorice la activación externa.
+Después de la señal explícita, el adaptador fija globalmente `page_location` a `https://brena.cl` más el pathname saneado y `page_referrer` a vacío, antes de inicializar Google. Luego encola `ad_storage`, `ad_user_data`, `ad_personalization` y `analytics_storage` como `denied`; también deshabilita señales publicitarias, ignora el referrer automático y mantiene `send_page_view:false`. Esto impide tráfico de Google antes de consentimiento y mantiene el modo futuro sin cookies analíticas persistentes.
 
 ## Eventos y payloads
 
@@ -73,13 +73,13 @@ La estrategia es **last-touch de sesión**.
 
 - Solo se consideran `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` y `utm_term`.
 - Una URL con al menos una UTM válida reemplaza la atribución de sesión.
-- Una navegación sin UTM reutiliza la atribución segura existente.
-- La persistencia usa únicamente `sessionStorage` bajo una clave versionada.
+- Una navegación sin UTM reutiliza la atribución segura existente; una URL con UTM no autorizadas borra la atribución previa.
+- La persistencia usa únicamente `sessionStorage` bajo una clave versionada y solo existe cuando configuración y consentimiento están activos.
 - No se usan cookies ni `localStorage`.
 - Storage malformado, con claves extrañas o valores inseguros se elimina.
-- `utm_source` usa un vocabulario cerrado: `bing`, `facebook`, `google`, `instagram`, `linkedin`, `manual` o `newsletter`.
-- `utm_medium` usa un vocabulario cerrado: `affiliate`, `cpc`, `display`, `email`, `organic`, `referral` o `social`.
-- Campaña, contenido y término deben ser códigos ASCII no semánticos de 6 a 24 caracteres tras los prefijos `cmp_`, `cnt_` y `trm_` respectivamente.
+- Las cinco dimensiones usan una allowlist exacta configurada por el propietario; no existen valores aceptados por patrón.
+- La configuración debe declarar exactamente las cinco claves y arrays de códigos aprobados; ausente, incompleta o inválida degrada a cinco listas vacías.
+- Un nombre, RUT o teléfono con apariencia de código sigue siendo rechazado si no coincide exactamente con el registro aprobado.
 - Valores como nombres, direcciones, correos ofuscados, teléfonos o texto libre se descartan en vez de sanearse parcialmente.
 - Parámetros desconocidos, email, teléfono, nombre, `gclid` y cualquier otra query no entran al estado analítico.
 
@@ -108,9 +108,10 @@ Variables públicas necesarias para una activación futura:
 ```text
 BRENA_ANALYTICS_ENABLED=1
 BRENA_GA4_MEASUREMENT_ID=G-XXXXXXXXXX
+BRENA_ANALYTICS_UTM_ALLOWLIST_JSON={"utm_source":[],"utm_medium":[],"utm_campaign":[],"utm_content":[],"utm_term":[]}
 ```
 
-En el cierre de SEO-003 `BRENA_ANALYTICS_ENABLED` debe permanecer en `0` o ausente y no debe existir un ID inventado.
+En el cierre de SEO-003 `BRENA_ANALYTICS_ENABLED` debe permanecer en `0` o ausente y no debe existir un ID inventado. Las listas vacías no habilitan ninguna UTM. La señal de consentimiento no es una variable de servidor ni la casilla del formulario: debe proceder de una decisión e integración analítica posterior expresamente aprobada.
 
 Una configuración incompleta o inválida degrada a modo deshabilitado sin impedir que el servidor arranque ni que el formulario opere.
 
@@ -161,21 +162,22 @@ La suite prueba dataflow real de los módulos y limita los dobles al proveedor e
 
 1. Crear o confirmar la propiedad y stream web GA4.
 2. Entregar el Measurement ID real por el canal de configuración de Render, no por un commit.
-3. Confirmar explícitamente la decisión de consentimiento/cookies aplicable. SEO-003 mantiene siempre `analytics_storage=denied`; cualquier futura habilitación de cookies o mecanismo de consentimiento interactivo requiere un ticket y aprobación separados antes de cambiar este contrato.
-4. Activar ambas variables solo después del punto anterior.
-5. Verificar `page_view`, CTA, funnel y `generate_lead` en DebugView/Realtime con un lead sintético.
-6. Crear/verificar Search Console y enviar el sitemap.
+3. Entregar la taxonomía cerrada de valores autorizados para las cinco UTM, sin PII, mediante `BRENA_ANALYTICS_UTM_ALLOWLIST_JSON`.
+4. Confirmar explícitamente la decisión de consentimiento/cookies aplicable y aprobar el mecanismo independiente que establecerá la señal analítica. SEO-003 mantiene siempre `analytics_storage=denied`; cualquier futura habilitación de cookies requiere otro ticket.
+5. Activar configuración y señal solo después de los puntos anteriores.
+6. Verificar en navegador real que no existan requests ni cookies antes de la señal, y luego validar `page_view`, CTA, funnel y `generate_lead` en DebugView/Realtime con un lead sintético.
+7. Crear/verificar Search Console y enviar el sitemap.
 
 ## Riesgos y verificaciones futuras
 
 - GA4 no puede validarse en DebugView sin un ID y una activación autorizados.
 - La decisión jurídica sobre consentimiento/cookies no la determina el código.
-- La nomenclatura de campañas debe respetar los códigos opacos documentados; ampliar vocabularios o formatos requiere revisión de privacidad y pruebas.
+- La taxonomía de campañas debe ser cerrada, no contener PII y mantenerse en la allowlist operativa; cualquier alta requiere revisión de privacidad.
 - Cualquier nuevo CTA o evento requiere ampliar su schema y pruebas; no debe enviar texto del DOM.
 
 ## Revisión independiente
 
-La primera revisión del rango completo encontró 2 Critical, 2 Important y 1 Minor: cookies GA4 por defecto, UTM con texto potencialmente personal, conversión en preview, validación local incompleta y CSP abierta ante un objeto inválido. Cada caso se reprodujo con una prueba RED y se corrigió mediante Consent Mode denegado, ubicación/referrer gobernados, taxonomía UTM cerrada, `preview:false`, validación equivalente y un único validador efectivo de configuración.
+La primera revisión del rango completo encontró 2 Critical, 2 Important y 1 Minor: cookies GA4 por defecto, UTM con texto potencialmente personal, conversión en preview, validación local incompleta y CSP abierta ante un objeto inválido. La segunda revisión confirmó tres correcciones y mantuvo dos Critical: los patrones todavía admitían PII semántica y Consent Mode avanzado podía iniciar tráfico antes de gobernar URL/referrer. Ambos se reprodujeron con nuevas pruebas RED. La solución final usa allowlist exacta inyectada, no persiste atribución antes de consentimiento, bloquea completamente el adaptador externo sin señal independiente y fija ubicación/referrer saneados antes de inicializar Google.
 
 ## Fuera de alcance
 

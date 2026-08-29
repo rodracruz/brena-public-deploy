@@ -12,6 +12,14 @@ const {
   safeReferrerDomain,
 } = require("../frontend/public/analytics.js");
 
+const ATTRIBUTION_ALLOWLIST = Object.freeze({
+  utm_source: ["google", "manual", "newsletter", "linkedin"],
+  utm_medium: ["cpc"],
+  utm_campaign: ["campaign-sale-2026", "campaign-winter-2026"],
+  utm_content: ["creative-video-01"],
+  utm_term: ["keyword-home-01"],
+});
+
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
   return {
@@ -29,6 +37,7 @@ test("disabled analytics validates safely without calling a provider", () => {
     provider: { track: (...args) => calls.push(args) },
     location: { pathname: "/", search: "?utm_source=google" },
     storage: memoryStorage(),
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
   assert.equal(analytics.track("page_view", { page_type: "landing" }), false);
@@ -43,10 +52,11 @@ test("page views emit only safe context and last-touch session attribution", () 
     provider: { track: (eventName, payload) => calls.push({ eventName, payload }) },
     location: {
       pathname: "/",
-      search: "?utm_source=google&utm_medium=cpc&utm_campaign=cmp_sale2026&email=ana%40example.cl&gclid=secret",
+      search: "?utm_source=google&utm_medium=cpc&utm_campaign=campaign-sale-2026&email=ana%40example.cl&gclid=secret",
     },
     referrer: "https://www.google.com/search?q=deuda&email=ana%40example.cl#result",
     storage,
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
   assert.equal(analytics.track("page_view", { page_type: "landing" }), true);
@@ -57,33 +67,33 @@ test("page views emit only safe context and last-touch session attribution", () 
       page_type: "landing",
       utm_source: "google",
       utm_medium: "cpc",
-      utm_campaign: "cmp_sale2026",
+      utm_campaign: "campaign-sale-2026",
       referrer_domain: "google.com",
     },
   }]);
   assert.deepEqual(JSON.parse(storage.snapshot()[ATTRIBUTION_STORAGE_KEY]), {
     utm_source: "google",
     utm_medium: "cpc",
-    utm_campaign: "cmp_sale2026",
+    utm_campaign: "campaign-sale-2026",
   });
 });
 
 test("last-touch replaces prior attribution only when the current URL has valid UTM", () => {
   const storage = memoryStorage({
-    [ATTRIBUTION_STORAGE_KEY]: JSON.stringify({ utm_source: "newsletter", utm_campaign: "cmp_winter2026" }),
+    [ATTRIBUTION_STORAGE_KEY]: JSON.stringify({ utm_source: "newsletter", utm_campaign: "campaign-winter-2026" }),
   });
 
-  assert.deepEqual(resolveSessionAttribution("", storage), {
+  assert.deepEqual(resolveSessionAttribution("", storage, ATTRIBUTION_ALLOWLIST), {
     utm_source: "newsletter",
-    utm_campaign: "cmp_winter2026",
+    utm_campaign: "campaign-winter-2026",
   });
-  assert.deepEqual(resolveSessionAttribution("?utm_source=linkedin&utm_content=cnt_video01", storage), {
+  assert.deepEqual(resolveSessionAttribution("?utm_source=linkedin&utm_content=creative-video-01", storage, ATTRIBUTION_ALLOWLIST), {
     utm_source: "linkedin",
-    utm_content: "cnt_video01",
+    utm_content: "creative-video-01",
   });
   assert.deepEqual(JSON.parse(storage.snapshot()[ATTRIBUTION_STORAGE_KEY]), {
     utm_source: "linkedin",
-    utm_content: "cnt_video01",
+    utm_content: "creative-video-01",
   });
 });
 
@@ -95,12 +105,13 @@ test("unknown parameters, PII-like campaign values and contaminated storage are 
     }),
   });
 
-  assert.deepEqual(resolveSessionAttribution("", storage), {});
+  assert.deepEqual(resolveSessionAttribution("", storage, ATTRIBUTION_ALLOWLIST), {});
   assert.equal(storage.getItem(ATTRIBUTION_STORAGE_KEY), null);
   assert.deepEqual(resolveSessionAttribution(
-    "?utm_source=ana%40example.cl&utm_medium=%2B56912345678&utm_campaign=12345678&utm_term=trm_home01&name=Ana",
+    "?utm_source=ana%40example.cl&utm_medium=%2B56912345678&utm_campaign=12345678&utm_term=keyword-home-01&name=Ana",
     storage,
-  ), { utm_term: "trm_home01" });
+    ATTRIBUTION_ALLOWLIST,
+  ), { utm_term: "keyword-home-01" });
 });
 
 test("semantic PII-looking UTM values are rejected while approved campaign codes survive", () => {
@@ -108,19 +119,27 @@ test("semantic PII-looking UTM values are rejected while approved campaign codes
   assert.deepEqual(resolveSessionAttribution(
     "?utm_source=Maria&utm_medium=ana_silva&utm_campaign=Maria%20Perez&utm_content=Los_Aromos_123&utm_term=ana.silva",
     storage,
+    ATTRIBUTION_ALLOWLIST,
   ), {});
   assert.equal(storage.getItem(ATTRIBUTION_STORAGE_KEY), null);
 
   assert.deepEqual(resolveSessionAttribution(
-    "?utm_source=google&utm_medium=cpc&utm_campaign=cmp_sale2026&utm_content=cnt_video01&utm_term=trm_home01",
+    "?utm_source=google&utm_medium=cpc&utm_campaign=campaign-sale-2026&utm_content=creative-video-01&utm_term=keyword-home-01",
     storage,
+    ATTRIBUTION_ALLOWLIST,
   ), {
     utm_source: "google",
     utm_medium: "cpc",
-    utm_campaign: "cmp_sale2026",
-    utm_content: "cnt_video01",
-    utm_term: "trm_home01",
+    utm_campaign: "campaign-sale-2026",
+    utm_content: "creative-video-01",
+    utm_term: "keyword-home-01",
   });
+
+  assert.deepEqual(resolveSessionAttribution(
+    "?utm_campaign=cmp_mariaperez&utm_content=cnt_56912345678&utm_term=trm_12345678",
+    storage,
+    ATTRIBUTION_ALLOWLIST,
+  ), {});
 });
 
 test("referrer is reduced to a hostname and rejects unsafe protocols", () => {
@@ -139,6 +158,7 @@ test("event schemas reject unknown events, unknown keys and direct PII fields", 
     provider: { track: (eventName, payload) => calls.push({ eventName, payload }) },
     location: { pathname: "/", search: "" },
     storage: memoryStorage(),
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
   assert.equal(analytics.track("unknown_event", {}), false);
@@ -161,6 +181,7 @@ test("all approved event contracts emit their exact allowlisted payload", () => 
     provider: { track: (eventName, payload) => calls.push({ eventName, payload }) },
     location: { pathname: "/", search: "?utm_source=manual" },
     storage: memoryStorage(),
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
   assert.equal(analytics.track("cta_click", { cta_id: "hero_form", cta_location: "hero" }), true);
@@ -184,6 +205,7 @@ test("provider failures are contained and never escape into product flow", () =>
     provider: { track: () => { throw new Error("provider unavailable"); } },
     location: { pathname: "/", search: "" },
     storage: memoryStorage(),
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
   assert.doesNotThrow(() => analytics.track("form_start", {}));
@@ -207,12 +229,24 @@ test("disabled or invalid GA4 configuration creates no external side effects", (
   }
 });
 
-test("enabled GA4 adapter loads only gtag and suppresses automatic page views", () => {
+test("GA4 adapter requires explicit analytics consent before any external side effect", () => {
+  const config = { enabled: true, provider: "ga4", measurementId: "G-ABC1234567" };
+  const windowObject = { location: { pathname: "/", search: "", hash: "" } };
+  const documentObject = {
+    createElement() { throw new Error("must not create a script before consent"); },
+    head: { appendChild() { throw new Error("must not append a script before consent"); } },
+  };
+
+  assert.equal(createGa4Provider({ config, windowObject, documentObject }), null);
+  assert.equal(Object.hasOwn(windowObject, "dataLayer"), false);
+});
+
+test("explicitly consented GA4 adapter loads only gtag and suppresses automatic page views", () => {
   const appended = [];
   const windowObject = {
     location: {
       pathname: "/",
-      search: "?email=ana%40example.cl&utm_campaign=cmp_sale2026",
+      search: "?email=ana%40example.cl&utm_campaign=campaign-sale-2026",
       hash: "#ana",
     },
   };
@@ -227,6 +261,7 @@ test("enabled GA4 adapter loads only gtag and suppresses automatic page views", 
     windowObject,
     documentObject,
     now: () => new Date("2026-08-29T12:00:00.000Z"),
+    analyticsConsentGranted: true,
   });
 
   assert.ok(provider);
@@ -236,6 +271,10 @@ test("enabled GA4 adapter loads only gtag and suppresses automatic page views", 
     src: "https://www.googletagmanager.com/gtag/js?id=G-ABC1234567",
   }]);
   assert.deepEqual(windowObject.dataLayer, [
+    ["set", {
+      page_location: "https://brena.cl/",
+      page_referrer: "",
+    }],
     ["consent", "default", {
       ad_storage: "denied",
       ad_user_data: "denied",
@@ -270,4 +309,42 @@ test("browser bootstrap remains a no-op when public configuration is disabled", 
   assert.equal(windowObject.brenaAnalytics, analytics);
   assert.equal(analytics.track("page_view", { page_type: "landing" }), false);
   assert.equal(Object.hasOwn(windowObject, "dataLayer"), false);
+});
+
+test("browser bootstrap does not load GA4 until independent analytics consent is granted", () => {
+  const appended = [];
+  const storage = memoryStorage();
+  const config = {
+    enabled: true,
+    provider: "ga4",
+    measurementId: "G-ABC1234567",
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
+  };
+  const windowObject = {
+    __BRENA_ANALYTICS_CONFIG__: config,
+    location: { pathname: "/", search: "?utm_source=google" },
+    sessionStorage: storage,
+  };
+  const documentObject = {
+    referrer: "https://google.com/search?q=venta",
+    createElement(tagName) { return { tagName }; },
+    head: { appendChild: (node) => appended.push(node) },
+  };
+
+  const disabled = bootstrapBrowserAnalytics({ windowObject, documentObject });
+  assert.equal(disabled.track("page_view", { page_type: "landing" }), false);
+  assert.equal(Object.hasOwn(windowObject, "dataLayer"), false);
+  assert.deepEqual(appended, []);
+  assert.deepEqual(storage.snapshot(), {});
+
+  windowObject.__BRENA_ANALYTICS_CONSENT_GRANTED__ = true;
+  const enabled = bootstrapBrowserAnalytics({ windowObject, documentObject });
+  assert.equal(enabled.track("page_view", { page_type: "landing" }), true);
+  assert.equal(appended.length, 1);
+  assert.deepEqual(windowObject.dataLayer.at(-1), ["event", "page_view", {
+    pathname: "/",
+    page_type: "landing",
+    utm_source: "google",
+    referrer_domain: "google.com",
+  }]);
 });

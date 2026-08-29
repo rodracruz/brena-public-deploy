@@ -9,29 +9,6 @@ const ATTRIBUTION_KEYS = Object.freeze([
 ]);
 const ATTRIBUTION_STORAGE_KEY = "brena.analytics.attribution.v1";
 const SAFE_TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
-const SAFE_SOURCES = new Set([
-  "bing",
-  "facebook",
-  "google",
-  "instagram",
-  "linkedin",
-  "manual",
-  "newsletter",
-]);
-const SAFE_MEDIUMS = new Set([
-  "affiliate",
-  "cpc",
-  "display",
-  "email",
-  "organic",
-  "referral",
-  "social",
-]);
-const TRACKING_CODE_PATTERNS = Object.freeze({
-  utm_campaign: /^cmp_[a-z0-9]{6,24}$/,
-  utm_content: /^cnt_[a-z0-9]{6,24}$/,
-  utm_term: /^trm_[a-z0-9]{6,24}$/,
-});
 
 const EVENT_SCHEMAS = Object.freeze({
   page_view: Object.freeze({ page_type: new Set(["landing", "success"]) }),
@@ -42,25 +19,29 @@ const EVENT_SCHEMAS = Object.freeze({
   form_error: Object.freeze({ error_type: new Set(["validation", "network", "server"]) }),
 });
 
-function sanitizeCampaignValue(key, value) {
-  if (typeof value !== "string") return "";
-  const normalized = value.normalize("NFKC").trim();
-  if (key === "utm_source") return SAFE_SOURCES.has(normalized) ? normalized : "";
-  if (key === "utm_medium") return SAFE_MEDIUMS.has(normalized) ? normalized : "";
-  return TRACKING_CODE_PATTERNS[key]?.test(normalized) ? normalized : "";
+function allowedAttributionValues(allowlist, key) {
+  const values = allowlist?.[key];
+  if (!Array.isArray(values)) return new Set();
+  return new Set(values.filter((value) => typeof value === "string"));
 }
 
-function collectSafeAttribution(search) {
+function sanitizeCampaignValue(key, value, allowlist = {}) {
+  if (typeof value !== "string") return "";
+  const normalized = value.normalize("NFKC").trim();
+  return allowedAttributionValues(allowlist, key).has(normalized) ? normalized : "";
+}
+
+function collectSafeAttribution(search, allowlist) {
   const params = new URLSearchParams(search || "");
   const attribution = {};
   for (const key of ATTRIBUTION_KEYS) {
-    const value = sanitizeCampaignValue(key, params.get(key) || "");
+    const value = sanitizeCampaignValue(key, params.get(key) || "", allowlist);
     if (value) attribution[key] = value;
   }
   return attribution;
 }
 
-function readStoredAttribution(storage) {
+function readStoredAttribution(storage, allowlist) {
   if (!storage || typeof storage.getItem !== "function") return {};
   try {
     const raw = storage.getItem(ATTRIBUTION_STORAGE_KEY);
@@ -71,7 +52,7 @@ function readStoredAttribution(storage) {
     if (keys.some((key) => !ATTRIBUTION_KEYS.includes(key))) throw new Error("unknown attribution key");
     const attribution = {};
     for (const key of keys) {
-      const value = sanitizeCampaignValue(key, parsed[key]);
+      const value = sanitizeCampaignValue(key, parsed[key], allowlist);
       if (!value || value !== parsed[key]) throw new Error("unsafe attribution value");
       attribution[key] = value;
     }
@@ -82,9 +63,17 @@ function readStoredAttribution(storage) {
   }
 }
 
-function resolveSessionAttribution(search, storage) {
-  const current = collectSafeAttribution(search);
-  if (Object.keys(current).length === 0) return readStoredAttribution(storage);
+function resolveSessionAttribution(search, storage, allowlist) {
+  const current = collectSafeAttribution(search, allowlist);
+  const params = new URLSearchParams(search || "");
+  const hasAttributionInput = ATTRIBUTION_KEYS.some((key) => params.has(key));
+  if (Object.keys(current).length === 0) {
+    if (hasAttributionInput) {
+      try { storage?.removeItem?.(ATTRIBUTION_STORAGE_KEY); } catch { /* storage unavailable */ }
+      return {};
+    }
+    return readStoredAttribution(storage, allowlist);
+  }
   try { storage?.setItem?.(ATTRIBUTION_STORAGE_KEY, JSON.stringify(current)); } catch { /* storage unavailable */ }
   return current;
 }
@@ -135,8 +124,11 @@ function createAnalytics({
   storage,
   location = {},
   referrer = "",
+  attributionAllowlist = {},
 } = {}) {
-  const attribution = resolveSessionAttribution(location.search || "", storage);
+  const attribution = enabled
+    ? resolveSessionAttribution(location.search || "", storage, attributionAllowlist)
+    : {};
   const context = {
     pathname: safePathname(location.pathname || "/"),
     attribution,
@@ -179,8 +171,9 @@ function createGa4Provider({
   windowObject,
   documentObject,
   now = () => new Date(),
+  analyticsConsentGranted = false,
 } = {}) {
-  if (!validGa4Config(config) || !windowObject || !documentObject) return null;
+  if (!validGa4Config(config) || analyticsConsentGranted !== true || !windowObject || !documentObject) return null;
   try {
     const script = documentObject.createElement("script");
     script.async = true;
@@ -189,6 +182,10 @@ function createGa4Provider({
     const dataLayer = Array.isArray(windowObject.dataLayer) ? windowObject.dataLayer : [];
     windowObject.dataLayer = dataLayer;
     const gtag = (...args) => dataLayer.push(args);
+    gtag("set", {
+      page_location: canonicalPageLocation(windowObject.location?.pathname || "/"),
+      page_referrer: "",
+    });
     gtag("consent", "default", {
       ad_storage: "denied",
       ad_user_data: "denied",
@@ -220,7 +217,13 @@ function bootstrapBrowserAnalytics({ windowObject, documentObject } = {}) {
   const browserDocument = documentObject || (typeof document !== "undefined" ? document : undefined);
   if (!browserWindow || !browserDocument) return null;
   const config = browserWindow.__BRENA_ANALYTICS_CONFIG__ || {};
-  const provider = createGa4Provider({ config, windowObject: browserWindow, documentObject: browserDocument });
+  const analyticsConsentGranted = browserWindow.__BRENA_ANALYTICS_CONSENT_GRANTED__ === true;
+  const provider = createGa4Provider({
+    config,
+    windowObject: browserWindow,
+    documentObject: browserDocument,
+    analyticsConsentGranted,
+  });
   let storage;
   try { storage = browserWindow.sessionStorage; } catch { storage = undefined; }
   const analytics = createAnalytics({
@@ -229,6 +232,7 @@ function bootstrapBrowserAnalytics({ windowObject, documentObject } = {}) {
     storage,
     location: browserWindow.location,
     referrer: browserDocument.referrer,
+    attributionAllowlist: config.attributionAllowlist,
   });
   browserWindow.brenaAnalytics = analytics;
   return analytics;
