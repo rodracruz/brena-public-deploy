@@ -9,6 +9,7 @@ const { validateLeadSubmission, toBrenaLead } = require("./lead-contract");
 const { disabledAnalyticsConfig } = require("./analytics-config");
 const { createRateLimiter } = require("./rate-limiter");
 const { securityHeaders } = require("./security-headers");
+const { PAGES } = require("./public-pages/catalog");
 
 const MAX_BODY_BYTES = 16 * 1024;
 
@@ -29,7 +30,19 @@ const MIME_TYPES = Object.freeze({
 
 const CANONICAL_ORIGIN = "https://brena.cl";
 const RENDER_ORIGIN_HOST = "brena-public-deploy.onrender.com";
-const PUBLIC_DOCUMENTS = new Set(["/", "/index.html", "/success.html"]);
+const PAGE_FILE_BY_ROUTE = new Map(PAGES.map((page) => [page.route, `/${page.outputFile}`]));
+const PAGE_ALIAS_TO_ROUTE = new Map([["/index.html", "/"]]);
+for (const page of PAGES) {
+  if (page.route !== "/") {
+    PAGE_ALIAS_TO_ROUTE.set(`${page.route}.html`, page.route);
+    PAGE_ALIAS_TO_ROUTE.set(`${page.route}/`, page.route);
+  }
+}
+const PUBLIC_DOCUMENTS = new Set([
+  ...PAGE_FILE_BY_ROUTE.keys(),
+  ...PAGE_ALIAS_TO_ROUTE.keys(),
+  "/success.html",
+]);
 const ATTRIBUTION_KEYS = Object.freeze([
   "utm_source",
   "utm_medium",
@@ -144,7 +157,7 @@ function isDirectRenderDocument(request, trustProxy, pathname) {
 
 function writeCanonicalRedirect(response, requestUrl, responseSecurityHeaders) {
   const target = new URL(CANONICAL_ORIGIN);
-  target.pathname = requestUrl.pathname === "/index.html" ? "/" : requestUrl.pathname;
+  target.pathname = PAGE_ALIAS_TO_ROUTE.get(requestUrl.pathname) || requestUrl.pathname;
   target.search = safeAttributionSearch(requestUrl.searchParams);
   response.writeHead(308, {
     ...responseSecurityHeaders,
@@ -171,7 +184,8 @@ function safePublicFile(publicDir, pathname) {
 }
 
 async function serveStatic(request, response, publicDir, pathname, responseSecurityHeaders) {
-  const filePath = safePublicFile(publicDir, pathname);
+  const publicPath = PAGE_FILE_BY_ROUTE.get(pathname) || pathname;
+  const filePath = safePublicFile(publicDir, publicPath);
   if (!filePath) return false;
 
   let stat;
@@ -365,7 +379,7 @@ function createServer({
 
       if (["GET", "HEAD"].includes(request.method)) {
         const safeSearch = safeAttributionSearch(requestUrl.searchParams);
-        const needsDocumentRedirect = pathname === "/index.html"
+        const needsDocumentRedirect = PAGE_ALIAS_TO_ROUTE.has(pathname)
           || (PUBLIC_DOCUMENTS.has(pathname) && requestUrl.search !== safeSearch)
           || isDirectRenderDocument(request, trustProxy, pathname);
         if (needsDocumentRedirect) {

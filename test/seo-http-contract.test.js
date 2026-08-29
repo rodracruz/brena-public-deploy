@@ -111,6 +111,37 @@ test("the homepage declares one exact canonical URL and matching Open Graph URL"
   });
 });
 
+test("commercial pages serve canonical extensionless routes and redirect aliases without PII", async () => {
+  await withServer(async (baseUrl) => {
+    for (const route of [
+      "/vender-propiedad-rapido",
+      "/vender-propiedad-con-deudas",
+      "/vender-propiedad-en-mal-estado",
+    ]) {
+      const canonical = await fetch(`${baseUrl}${route}`, { headers: edgeHeaders, redirect: "manual" });
+      const alias = await fetch(`${baseUrl}${route}.html?utm_source=manual&email=persona%40example.cl`, { headers: edgeHeaders, redirect: "manual" });
+      const slash = await fetch(`${baseUrl}${route}/?utm_campaign=campaign-sale-2026&phone=%2B56912345678`, { headers: edgeHeaders, redirect: "manual" });
+      assert.equal(canonical.status, 200, route);
+      assert.match(await canonical.text(), new RegExp(`<link rel="canonical" href="https://brena\\.cl${route}">`));
+      assert.equal(alias.status, 308);
+      assert.equal(alias.headers.get("location"), `https://brena.cl${route}?utm_source=manual`);
+      assert.equal(slash.status, 308);
+      assert.equal(slash.headers.get("location"), `https://brena.cl${route}?utm_campaign=campaign-sale-2026`);
+    }
+  });
+});
+
+test("direct Render commercial documents redirect while technical routes remain available", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/vender-propiedad-rapido?utm_medium=cpc&name=Ana`, {
+      headers: { host: "brena-public-deploy.onrender.com", "x-forwarded-proto": "https" },
+      redirect: "manual",
+    });
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get("location"), "https://brena.cl/vender-propiedad-rapido?utm_medium=cpc");
+  });
+});
+
 test("robots allows the public site and references the canonical sitemap", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/robots.txt`, { headers: edgeHeaders });
