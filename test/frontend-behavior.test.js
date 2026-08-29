@@ -72,14 +72,14 @@ test("drops invalid or non-HTTP page context instead of forwarding it", () => {
   assert.equal(submission.referrer, "");
 });
 
-test("tracks a landing page view only once even if initialization repeats", () => {
+test("tracks the explicit static page type only once even if initialization repeats", () => {
   const calls = [];
   const analytics = { track: (eventName, payload) => calls.push({ eventName, payload }) };
 
-  trackPageViewOnce(analytics);
-  trackPageViewOnce(analytics);
+  trackPageViewOnce(analytics, "commercial_fast_sale");
+  trackPageViewOnce(analytics, "commercial_fast_sale");
 
-  assert.deepEqual(calls, [{ eventName: "page_view", payload: { page_type: "landing" } }]);
+  assert.deepEqual(calls, [{ eventName: "page_view", payload: { page_type: "commercial_fast_sale" } }]);
 });
 
 test("CTA tracking uses only declarative stable identifiers", () => {

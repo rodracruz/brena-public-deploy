@@ -40,7 +40,7 @@ test("disabled analytics validates safely without calling a provider", () => {
     attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
-  assert.equal(analytics.track("page_view", { page_type: "landing" }), false);
+  assert.equal(analytics.track("page_view", { page_type: "homepage" }), false);
   assert.deepEqual(calls, []);
 });
 
@@ -59,12 +59,12 @@ test("page views emit only safe context and last-touch session attribution", () 
     attributionAllowlist: ATTRIBUTION_ALLOWLIST,
   });
 
-  assert.equal(analytics.track("page_view", { page_type: "landing" }), true);
+  assert.equal(analytics.track("page_view", { page_type: "homepage" }), true);
   assert.deepEqual(calls, [{
     eventName: "page_view",
     payload: {
       pathname: "/",
-      page_type: "landing",
+      page_type: "homepage",
       utm_source: "google",
       utm_medium: "cpc",
       utm_campaign: "campaign-sale-2026",
@@ -172,6 +172,24 @@ test("event schemas reject unknown events, unknown keys and direct PII fields", 
     message: "Falló para ana@example.cl",
   }), false);
   assert.deepEqual(calls, []);
+});
+
+test("page views accept exactly the four approved SEO-005 page types", () => {
+  const accepted = [];
+  const analytics = createAnalytics({
+    enabled: true,
+    provider: { track: (_eventName, payload) => accepted.push(payload.page_type) },
+    location: { pathname: "/", search: "" },
+    storage: memoryStorage(),
+    attributionAllowlist: ATTRIBUTION_ALLOWLIST,
+  });
+  for (const pageType of ["homepage", "commercial_fast_sale", "commercial_debt", "commercial_property_condition"]) {
+    assert.equal(analytics.track("page_view", { page_type: pageType }), true);
+  }
+  for (const pageType of ["landing", "success", "arbitrary", "ana@example.cl"]) {
+    assert.equal(analytics.track("page_view", { page_type: pageType }), false);
+  }
+  assert.deepEqual(accepted, ["homepage", "commercial_fast_sale", "commercial_debt", "commercial_property_condition"]);
 });
 
 test("all approved event contracts emit their exact allowlisted payload", () => {
@@ -307,7 +325,7 @@ test("browser bootstrap remains a no-op when public configuration is disabled", 
   const analytics = bootstrapBrowserAnalytics({ windowObject, documentObject });
 
   assert.equal(windowObject.brenaAnalytics, analytics);
-  assert.equal(analytics.track("page_view", { page_type: "landing" }), false);
+  assert.equal(analytics.track("page_view", { page_type: "homepage" }), false);
   assert.equal(Object.hasOwn(windowObject, "dataLayer"), false);
 });
 
@@ -332,18 +350,18 @@ test("browser bootstrap does not load GA4 until independent analytics consent is
   };
 
   const disabled = bootstrapBrowserAnalytics({ windowObject, documentObject });
-  assert.equal(disabled.track("page_view", { page_type: "landing" }), false);
+  assert.equal(disabled.track("page_view", { page_type: "homepage" }), false);
   assert.equal(Object.hasOwn(windowObject, "dataLayer"), false);
   assert.deepEqual(appended, []);
   assert.deepEqual(storage.snapshot(), {});
 
   windowObject.__BRENA_ANALYTICS_CONSENT_GRANTED__ = true;
   const enabled = bootstrapBrowserAnalytics({ windowObject, documentObject });
-  assert.equal(enabled.track("page_view", { page_type: "landing" }), true);
+  assert.equal(enabled.track("page_view", { page_type: "homepage" }), true);
   assert.equal(appended.length, 1);
   assert.deepEqual(windowObject.dataLayer.at(-1), ["event", "page_view", {
     pathname: "/",
-    page_type: "landing",
+    page_type: "homepage",
     utm_source: "google",
     referrer_domain: "google.com",
   }]);

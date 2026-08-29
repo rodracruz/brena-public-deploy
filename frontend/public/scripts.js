@@ -103,11 +103,12 @@ function localSubmissionErrors(submission) {
   return errors;
 }
 
-function trackPageViewOnce(analytics) {
+function trackPageViewOnce(analytics, pageType) {
   if (!analytics || (typeof analytics !== "object" && typeof analytics !== "function")) return false;
   if (pageViewTracked.has(analytics)) return false;
-  pageViewTracked.add(analytics);
-  return trackSafely(analytics, "page_view", { page_type: "landing" });
+  const tracked = trackSafely(analytics, "page_view", { page_type: pageType });
+  if (tracked) pageViewTracked.add(analytics);
+  return tracked;
 }
 
 function initializeCtaTracking({ documentObject, analytics }) {
@@ -197,7 +198,7 @@ if (typeof document !== "undefined") {
 
 function initializePage() {
   const analytics = window.brenaAnalytics;
-  trackPageViewOnce(analytics);
+  trackPageViewOnce(analytics, document.documentElement?.dataset?.pageType);
   initializeCtaTracking({ documentObject: document, analytics });
   const header = document.querySelector("[data-header]");
   const revealElements = document.querySelectorAll("[data-reveal]");

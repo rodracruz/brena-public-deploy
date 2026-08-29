@@ -11,7 +11,12 @@ const ATTRIBUTION_STORAGE_KEY = "brena.analytics.attribution.v1";
 const SAFE_TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 const EVENT_SCHEMAS = Object.freeze({
-  page_view: Object.freeze({ page_type: new Set(["landing", "success"]) }),
+  page_view: Object.freeze({ page_type: new Set([
+    "homepage",
+    "commercial_fast_sale",
+    "commercial_debt",
+    "commercial_property_condition",
+  ]) }),
   cta_click: Object.freeze({ cta_id: SAFE_TOKEN, cta_location: SAFE_TOKEN }),
   form_start: Object.freeze({}),
   form_submit_attempt: Object.freeze({}),
