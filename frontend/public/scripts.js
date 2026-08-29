@@ -52,8 +52,100 @@ function buildSubmission(values, pageContext) {
   };
 }
 
+const pageViewTracked = new WeakSet();
+
+function trackSafely(analytics, eventName, payload) {
+  try {
+    return Boolean(analytics?.track?.(eventName, payload));
+  } catch {
+    return false;
+  }
+}
+
+function trackPageViewOnce(analytics) {
+  if (!analytics || (typeof analytics !== "object" && typeof analytics !== "function")) return false;
+  if (pageViewTracked.has(analytics)) return false;
+  pageViewTracked.add(analytics);
+  return trackSafely(analytics, "page_view", { page_type: "landing" });
+}
+
+function initializeCtaTracking({ documentObject, analytics }) {
+  documentObject?.querySelectorAll?.("[data-analytics-cta-id][data-analytics-cta-location]")
+    .forEach((element) => {
+      element.addEventListener("click", () => {
+        trackSafely(analytics, "cta_click", {
+          cta_id: element.dataset.analyticsCtaId,
+          cta_location: element.dataset.analyticsCtaLocation,
+        });
+      });
+    });
+}
+
+function initializeFormStartTracking(form, analytics) {
+  if (!form?.addEventListener) return;
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    trackSafely(analytics, "form_start", {});
+    form.removeEventListener?.("input", start);
+    form.removeEventListener?.("change", start);
+  };
+  form.addEventListener("input", start);
+  form.addEventListener("change", start);
+}
+
+async function submitLead({ submission, fetchImpl, analytics }) {
+  trackSafely(analytics, "form_submit_attempt", {});
+  try {
+    const response = await fetchImpl("/api/leads", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(submission),
+    });
+    const body = await response.json().catch(() => ({}));
+    const confirmed = response.ok
+      && body?.ok === true
+      && typeof body.submissionId === "string"
+      && Boolean(body.submissionId.trim());
+    if (confirmed) {
+      trackSafely(analytics, "generate_lead", { submission_status: "created" });
+    } else if (!response.ok) {
+      trackSafely(analytics, "form_error", {
+        error_type: response.status < 500 ? "validation" : "server",
+      });
+    }
+    return { response, body, confirmed };
+  } catch (error) {
+    trackSafely(analytics, "form_error", { error_type: "network" });
+    throw error;
+  }
+}
+
+async function submitValidatedLead({
+  submission,
+  hasLocalErrors,
+  fetchImpl,
+  analytics,
+}) {
+  if (hasLocalErrors) {
+    trackSafely(analytics, "form_error", { error_type: "validation" });
+    return { skipped: true, confirmed: false };
+  }
+  return submitLead({ submission, fetchImpl, analytics });
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { collectAttribution, buildSubmission, safeContextUrl };
+  module.exports = {
+    buildSubmission,
+    collectAttribution,
+    initializeCtaTracking,
+    initializeFormStartTracking,
+    safeContextUrl,
+    submitLead,
+    submitValidatedLead,
+    trackPageViewOnce,
+  };
 }
 
 if (typeof document !== "undefined") {
@@ -61,6 +153,9 @@ if (typeof document !== "undefined") {
 }
 
 function initializePage() {
+  const analytics = window.brenaAnalytics;
+  trackPageViewOnce(analytics);
+  initializeCtaTracking({ documentObject: document, analytics });
   const header = document.querySelector("[data-header]");
   const revealElements = document.querySelectorAll("[data-reveal]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -97,12 +192,13 @@ function initializePage() {
   const year = document.querySelector("[data-current-year]");
   if (year) year.textContent = String(new Date().getFullYear());
 
-  initializeLeadForm();
+  initializeLeadForm(analytics);
 }
 
-function initializeLeadForm() {
+function initializeLeadForm(analytics) {
   const form = document.querySelector("#lead-form");
   if (!form) return;
+  initializeFormStartTracking(form, analytics);
 
   const steps = [...form.querySelectorAll("[data-form-step]")];
   const nextButton = form.querySelector("[data-next-step]");
@@ -219,6 +315,12 @@ function initializeLeadForm() {
 
     const localErrors = [...form.querySelectorAll("[data-error-for]")].filter((element) => element.textContent);
     if (localErrors.length > 0) {
+      await submitValidatedLead({
+        submission,
+        hasLocalErrors: true,
+        fetchImpl: fetch,
+        analytics,
+      });
       if (errorSummary) {
         errorSummary.textContent = "Revisa los datos marcados antes de enviar.";
         errorSummary.hidden = false;
@@ -232,12 +334,12 @@ function initializeLeadForm() {
     status.textContent = "Enviando tu solicitud…";
 
     try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(submission),
+      const { response, body } = await submitValidatedLead({
+        submission,
+        hasLocalErrors: false,
+        fetchImpl: fetch,
+        analytics,
       });
-      const body = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         const errors = body.errors && typeof body.errors === "object" ? body.errors : {};

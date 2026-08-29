@@ -154,3 +154,34 @@ test("the legacy success document stays functional but cannot be indexed", async
     assert.equal(html.includes("rel=\"canonical\""), false);
   });
 });
+
+test("the disabled analytics bundle is delivered same-origin without relaxing CSP", async () => {
+  await withServer(async (baseUrl) => {
+    const [page, config, analytics, product] = await Promise.all([
+      fetch(`${baseUrl}/`, { headers: edgeHeaders }),
+      fetch(`${baseUrl}/analytics-config.js`, { headers: edgeHeaders }),
+      fetch(`${baseUrl}/analytics.js?v=3.0.0`, { headers: edgeHeaders }),
+      fetch(`${baseUrl}/scripts.js?v=3.0.0`, { headers: edgeHeaders }),
+    ]);
+    const html = await page.text();
+    const configSource = await config.text();
+    const csp = page.headers.get("content-security-policy");
+
+    assert.equal(page.status, 200);
+    assert.equal(config.status, 200);
+    assert.equal(analytics.status, 200);
+    assert.equal(product.status, 200);
+    assert.equal(config.headers.get("cache-control"), "no-store");
+    assert.equal(
+      configSource,
+      'window.__BRENA_ANALYTICS_CONFIG__ = Object.freeze({"enabled":false,"provider":"none","measurementId":""});\n',
+    );
+    assert.match(html, /<script src="\/analytics-config\.js" defer><\/script>/);
+    assert.match(html, /<script src="\/analytics\.js\?v=3\.0\.0" defer><\/script>/);
+    assert.match(html, /<script src="\/scripts\.js\?v=3\.0\.0" defer><\/script>/);
+    assert.equal(csp.includes("googletagmanager.com"), false);
+    assert.equal(csp.includes("google-analytics.com"), false);
+    assert.equal(csp.includes("*"), false);
+    assert.equal(csp.includes("unsafe-eval"), false);
+  });
+});
