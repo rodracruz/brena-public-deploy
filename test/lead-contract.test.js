@@ -104,8 +104,8 @@ test("maps a public submission to the existing BrenaV2 lead vocabulary", () => {
   const validated = validateLeadSubmission(validInput).data;
   const payload = toBrenaLead(validated, {
     submittedAt: "2026-08-26T13:45:00.000Z",
-    pageUrl: "https://brena.cl/?utm_source=google",
-    referrer: "https://www.google.com/",
+    pageUrl: "https://ana:secret@brena.cl/?utm_source=google&email=ana%40example.cl#contacto",
+    referrer: "https://www.google.com/search?q=deuda&phone=%2B56912345678#resultado",
   });
 
   assert.deepEqual(payload, {
@@ -132,8 +132,8 @@ test("maps a public submission to the existing BrenaV2 lead vocabulary", () => {
     },
     attribution: {
       channel: "website",
-      page_url: "https://brena.cl/?utm_source=google",
-      referrer: "https://www.google.com/",
+      page_url: "https://brena.cl/",
+      referrer: "https://www.google.com/search",
       utm_source: "google",
       utm_medium: "cpc",
       utm_campaign: "venta urgente",

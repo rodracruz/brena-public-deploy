@@ -107,6 +107,7 @@ test("the homepage declares one exact canonical URL and matching Open Graph URL"
     assert.match(html, /<link rel="canonical" href="https:\/\/brena\.cl\/">/);
     assert.match(html, /<meta property="og:url" content="https:\/\/brena\.cl\/">/);
     assert.equal((html.match(/rel="canonical"/g) || []).length, 1);
+    assert.match(html, /<form id="lead-form" method="post" action="\/api\/leads" novalidate>/);
   });
 });
 

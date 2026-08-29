@@ -27,8 +27,8 @@ test("builds the public API submission with boolean consent and page context", (
     consent: "on",
     website: "",
   }, {
-    href: "https://brena.cl/?utm_source=instagram&utm_content=video-a",
-    referrer: "https://instagram.com/",
+    href: "https://ana:secret@brena.cl/?utm_source=instagram&utm_content=video-a&email=ana%40example.cl#formulario",
+    referrer: "https://instagram.com/campana?phone=%2B56912345678#perfil",
     search: "?utm_source=instagram&utm_content=video-a",
   });
 
@@ -44,11 +44,22 @@ test("builds the public API submission with boolean consent and page context", (
     message: "Quiero conversar",
     consent: true,
     website: "",
-    pageUrl: "https://brena.cl/?utm_source=instagram&utm_content=video-a",
-    referrer: "https://instagram.com/",
+    pageUrl: "https://brena.cl/",
+    referrer: "https://instagram.com/campana",
     attribution: {
       utm_source: "instagram",
       utm_content: "video-a",
     },
   });
+});
+
+test("drops invalid or non-HTTP page context instead of forwarding it", () => {
+  const submission = buildSubmission({}, {
+    href: "javascript:alert(document.cookie)",
+    referrer: "not a URL",
+    search: "",
+  });
+
+  assert.equal(submission.pageUrl, "");
+  assert.equal(submission.referrer, "");
 });

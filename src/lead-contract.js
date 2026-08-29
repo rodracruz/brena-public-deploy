@@ -149,7 +149,12 @@ function safeMetadataUrl(value) {
   if (!candidate) return "";
   try {
     const url = new URL(candidate);
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    url.username = "";
+    url.password = "";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
   } catch {
     return "";
   }

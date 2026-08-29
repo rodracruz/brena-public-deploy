@@ -18,6 +18,21 @@ function collectAttribution(search) {
   return attribution;
 }
 
+function safeContextUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    url.username = "";
+    url.password = "";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
 function buildSubmission(values, pageContext) {
   return {
     name: values.name || "",
@@ -31,14 +46,14 @@ function buildSubmission(values, pageContext) {
     message: values.message || "",
     consent: values.consent === "on" || values.consent === true,
     website: values.website || "",
-    pageUrl: pageContext.href || "",
-    referrer: pageContext.referrer || "",
+    pageUrl: safeContextUrl(pageContext.href),
+    referrer: safeContextUrl(pageContext.referrer),
     attribution: collectAttribution(pageContext.search || ""),
   };
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { collectAttribution, buildSubmission };
+  module.exports = { collectAttribution, buildSubmission, safeContextUrl };
 }
 
 if (typeof document !== "undefined") {
