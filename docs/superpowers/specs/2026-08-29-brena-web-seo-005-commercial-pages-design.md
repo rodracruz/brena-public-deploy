@@ -2,7 +2,7 @@
 
 Fecha: 2026-08-29
 
-Estado: diseño aprobado
+Estado: diseño aprobado por Rodrigo; aptitud para planificación sujeta a revisión independiente
 
 Base: `5ebc986f862ead06dacf302087bafc7e161f4e9b`
 
@@ -34,6 +34,22 @@ Las cuatro superficies deben generarse como HTML estático desde una base común
 
 ## 3. Contexto de negocio
 
+### 3.0 Registro de decisiones y autoridad
+
+Las afirmaciones de esta sección no se infieren de la homepage. Fueron autorizadas expresamente por Rodrigo, propietario del contexto de negocio, durante el discovery de BRENA-WEB-SEO-005 el 2026-08-29:
+
+| Decisión | Vocabulario autorizado | Autoridad y fecha |
+|---|---|---|
+| Modelo comercial | BRENA puede combinar inversión directa, mejoramiento o remodelación e intermediación o comercialización según cada caso. No existe modalidad única ni promesa de compra. | Rodrigo, 2026-08-29 |
+| Principio público | “BRENA evalúa cada propiedad y, según sus condiciones, estructura la alternativa más conveniente, que puede incluir inversión directa, mejoramiento o remodelación previa a la venta y otras vías de comercialización.” | Rodrigo, 2026-08-29 |
+| Cobertura | BRENA recibe solicitudes desde distintas regiones de Chile; la viabilidad se confirma según ubicación, características y alternativa requerida. No existe cobertura nacional garantizada. | Rodrigo, 2026-08-29 |
+| Experiencia constructiva | BRENA puede declarar experiencia directa en construcción, mejoramiento y remodelación, sin años, cifras, proyectos, metros cuadrados, valorizaciones, porcentajes, certificaciones ni resultados garantizados. | Rodrigo, 2026-08-29 |
+| Contenido de deudas | Orientación general respaldada por fuentes oficiales, delimitando cuándo corresponde consultar a banco, acreedor, abogado u otro profesional. BRENA no se presenta como asesor legal o financiero. | Rodrigo, 2026-08-29 |
+| Formulario | Una única implementación completa en las cuatro superficies; ninguna situación preseleccionada. Solo se permite indicación visual contextual donde existe correspondencia exacta. | Rodrigo, 2026-08-29 |
+| Analytics | `page_type` cerrado a `homepage`, `commercial_fast_sale`, `commercial_debt` y `commercial_property_condition`; `pathname` separado; `success.html` fuera de esta taxonomía. | Rodrigo, 2026-08-29 |
+
+Este registro resuelve las dependencias de negocio que SEO-004 dejó abiertas. Cualquier ampliación de vocabulario, modalidad, cobertura o experiencia requiere una nueva aprobación explícita y no puede inferirse durante la implementación.
+
 ### 3.1 Confirmado
 
 El sitio y las decisiones de producto permiten declarar lo siguiente:
@@ -64,6 +80,22 @@ El sitio y las decisiones de producto permiten declarar lo siguiente:
 El propietario aporta información inicial correcta, selecciona expresamente su situación y autoriza el contacto. BRENA ordena los antecedentes, realiza una evaluación inicial y comunica si existe una alternativa que valga la pena desarrollar.
 
 Un banco, acreedor, abogado, tasador u otro profesional debe confirmar aquello que corresponda a su ámbito. BRENA no debe presentar una evaluación económica preliminar como autorización bancaria, resolución jurídica, tasación certificada o recomendación financiera individual.
+
+### 3.4 Gobernanza de la página de deudas
+
+Rodrigo es el responsable editorial de las afirmaciones comerciales públicas. Para SEO-005 autorizó contenido general basado en fuentes oficiales, sin exigir un revisor legal externo como gate de este ticket.
+
+La implementación debe aplicar estas reglas cerradas:
+
+- cada afirmación hipotecaria, registral o financiera debe estar respaldada directamente por una fuente oficial identificada;
+- la documentación de implementación registrará URL, entidad emisora y fecha de consulta;
+- la fecha de revisión inicial será la fecha en que se redacte y verifique el HTML de SEO-005;
+- no se extrapolará una regla general desde blogs, competidores, foros o casos individuales;
+- si una afirmación necesaria no puede sostenerse con una fuente oficial o cruza hacia asesoría individual, se omite;
+- la página distinguirá explícitamente evaluación económica, confirmación del acreedor y asesoría profesional;
+- cualquier cambio normativo posterior requiere nueva revisión editorial antes de actualizar el copy.
+
+Esta decisión sustituye la dependencia abierta de SEO-004: SEO-005 no queda pendiente de designar un abogado, pero tampoco está autorizado a publicar asesoría jurídica o financiera.
 
 ## 4. Alcance
 
@@ -109,13 +141,13 @@ La implementación debe separar tres responsabilidades:
 2. **Renderers compartidos:** layout, header, navegación, breadcrumbs, secciones comunes, CTA, formulario, FAQ y footer.
 3. **Generador:** valida el catálogo, produce los HTML y comprueba que el resultado sea determinista.
 
-Ubicación propuesta:
+Ubicación definida:
 
 - `src/public-pages/catalog.js`
 - `src/public-pages/render.js`
 - `scripts/build-public-pages.js`
 
-Los nombres pueden ajustarse durante el plan si el repositorio demuestra una convención mejor, pero deben mantenerse estas fronteras.
+El plan y la implementación usarán estos nombres. Cambiarlos requeriría corregir primero esta spec y justificar una contradicción técnica demostrada.
 
 ### 5.2 Salidas versionadas
 
@@ -182,7 +214,7 @@ Worker y servidor deben conservar los contratos de SEO-002:
 - no se crean loops;
 - las rutas y aliases nuevos quedan cubiertos por pruebas de Cloudflare y servidor.
 
-Las reglas de aliases del Worker pueden ser explícitas y deben tener una prueba de paridad con el catálogo canónico. No se introducirá un bundler ni un import remoto para el Worker.
+Las reglas de aliases del Worker serán explícitas y tendrán una prueba de paridad con el catálogo canónico. No se introducirá un bundler ni un import remoto para el Worker.
 
 ## 7. Sistema común de componentes
 
@@ -325,7 +357,7 @@ No se introducirán contratos o comportamientos diferentes por página.
 
 ### 10.2 Indicación contextual sin selección
 
-El catálogo puede declarar `relatedSituation` solamente para:
+El catálogo declarará `relatedSituation` solamente para:
 
 - `commercial_fast_sale` → `necesita_vender_rapido`
 - `commercial_debt` → `mora_hipotecaria`
@@ -535,7 +567,7 @@ La implementación comenzará con tests RED por comportamiento, no con snapshots
 - no hay elementos interactivos anidados;
 - el contenido editorial específico no contiene bloques extensos idénticos;
 - la comparación de duplicación excluye deliberadamente layout, formulario y footer compartidos;
-- no aparecen promesas, porcentajes, cifras, testimonios o credenciales prohibidos.
+- no aparecen promesas, porcentajes, métricas comerciales, estadísticas, testimonios o credenciales no demostrados; este control no prohíbe numeración de pasos, año, límites técnicos ni el texto existente “cerca de dos minutos”.
 
 ### 17.6 Regresión
 
