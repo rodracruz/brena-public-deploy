@@ -1,5 +1,35 @@
 const ORIGIN = new URL("https://brena-public-deploy.onrender.com");
 const CANONICAL_ORIGIN = "https://brena.cl";
+const HSTS = "max-age=15552000";
+const ATTRIBUTION_KEYS = Object.freeze([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+]);
+
+function safeAttributionSearch(searchParams) {
+  const safe = new URLSearchParams();
+  for (const key of ATTRIBUTION_KEYS) {
+    const value = searchParams.get(key)?.trim().slice(0, 120);
+    if (value) safe.set(key, value);
+  }
+  const query = safe.toString();
+  return query ? `?${query}` : "";
+}
+
+function canonicalRedirect(incomingUrl) {
+  const target = new URL(CANONICAL_ORIGIN);
+  target.pathname = incomingUrl.pathname === "/index.html" ? "/" : incomingUrl.pathname;
+  target.search = safeAttributionSearch(incomingUrl.searchParams);
+  return target;
+}
+
+function withHttpsSecurity(headers, incomingUrl) {
+  if (incomingUrl.protocol === "https:") headers.set("strict-transport-security", HSTS);
+  else headers.delete("strict-transport-security");
+}
 
 function rewriteOriginLocation(headers) {
   const location = headers.get("location");
@@ -14,13 +44,23 @@ function rewriteOriginLocation(headers) {
 export default {
   async fetch(request) {
     const incomingUrl = new URL(request.url);
-    if (incomingUrl.hostname === "www.brena.cl") {
+    const method = request.method.toUpperCase();
+    const isNavigation = method === "GET" || method === "HEAD";
+    const safeSearch = safeAttributionSearch(incomingUrl.searchParams);
+    const needsCanonicalRedirect = incomingUrl.protocol !== "https:"
+      || incomingUrl.hostname !== "brena.cl"
+      || incomingUrl.pathname === "/index.html"
+      || (isNavigation && incomingUrl.search !== safeSearch);
+
+    if (needsCanonicalRedirect) {
+      const headers = new Headers({
+        location: canonicalRedirect(incomingUrl).toString(),
+        "cache-control": "public, max-age=3600",
+      });
+      withHttpsSecurity(headers, incomingUrl);
       return new Response(null, {
-        status: 301,
-        headers: {
-          location: `${CANONICAL_ORIGIN}${incomingUrl.pathname}${incomingUrl.search}`,
-          "cache-control": "public, max-age=3600",
-        },
+        status: 308,
+        headers,
       });
     }
 
@@ -35,7 +75,6 @@ export default {
     headers.set("x-forwarded-host", incomingUrl.host);
     headers.set("x-forwarded-proto", "https");
 
-    const method = request.method.toUpperCase();
     const body = method === "GET" || method === "HEAD"
       ? undefined
       : await request.arrayBuffer();
@@ -48,6 +87,7 @@ export default {
 
     const responseHeaders = new Headers(upstreamResponse.headers);
     rewriteOriginLocation(responseHeaders);
+    withHttpsSecurity(responseHeaders, incomingUrl);
     return new Response(upstreamResponse.body, {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
