@@ -56,6 +56,36 @@ test("the Cloudflare worker proxies an already canonical request without a redir
   assert.equal(response.headers.get("location"), null);
 });
 
+test("the Cloudflare worker preserves functional queries for assets and technical GET routes", async (t) => {
+  const worker = await loadWorker();
+  const originalFetch = global.fetch;
+  const forwardedUrls = [];
+  t.after(() => { global.fetch = originalFetch; });
+
+  global.fetch = async (request) => {
+    forwardedUrls.push(request.url);
+    return new Response("ok", { status: 200 });
+  };
+
+  const asset = await worker.fetch(new Request("https://brena.cl/styles.css?v=2.0.1"));
+  const healthcheck = await worker.fetch(new Request("https://brena.cl/healthcheck?probe=ready"));
+
+  assert.equal(asset.status, 200);
+  assert.equal(healthcheck.status, 200);
+  assert.deepEqual(forwardedUrls, [
+    "https://brena-public-deploy.onrender.com/styles.css?v=2.0.1",
+    "https://brena-public-deploy.onrender.com/healthcheck?probe=ready",
+  ]);
+});
+
+test("the Cloudflare worker redirects alternate HTTPS ports to the exact canonical origin", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(new Request("https://brena.cl:8443/"));
+
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://brena.cl/");
+});
+
 test("the Cloudflare worker proxies requests to Render and rewrites origin redirects", async (t) => {
   const worker = await loadWorker();
   const originalFetch = global.fetch;
@@ -70,16 +100,19 @@ test("the Cloudflare worker proxies requests to Render and rewrites origin redir
     });
   };
 
-  const response = await worker.fetch(new Request("https://brena.cl/api/leads?source=public", {
+  const response = await worker.fetch(new Request(
+    "https://brena.cl/api/leads?source=public&email=persona%40example.cl",
+    {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "cf-connecting-ip": "203.0.113.20",
     },
     body: JSON.stringify({ technical: true }),
-  }));
+    },
+  ));
 
-  assert.equal(forwardedRequest.url, "https://brena-public-deploy.onrender.com/api/leads?source=public");
+  assert.equal(forwardedRequest.url, "https://brena-public-deploy.onrender.com/api/leads");
   assert.equal(forwardedRequest.method, "POST");
   assert.equal(forwardedRequest.headers.get("x-forwarded-host"), "brena.cl");
   assert.equal(forwardedRequest.headers.get("x-forwarded-proto"), "https");

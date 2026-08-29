@@ -1,6 +1,19 @@
 const ORIGIN = new URL("https://brena-public-deploy.onrender.com");
 const CANONICAL_ORIGIN = "https://brena.cl";
+const CANONICAL_HOST = "brena.cl";
 const HSTS = "max-age=15552000";
+const QUERY_PRESERVING_EXTENSIONS = new Set([
+  ".css",
+  ".ico",
+  ".jpeg",
+  ".jpg",
+  ".js",
+  ".png",
+  ".svg",
+  ".txt",
+  ".webp",
+  ".xml",
+]);
 const ATTRIBUTION_KEYS = Object.freeze([
   "utm_source",
   "utm_medium",
@@ -19,10 +32,25 @@ function safeAttributionSearch(searchParams) {
   return query ? `?${query}` : "";
 }
 
-function canonicalRedirect(incomingUrl) {
+function preservesFunctionalQuery(pathname) {
+  if (pathname === "/healthcheck") return true;
+  const lastSegment = pathname.split("/").pop() || "";
+  const dot = lastSegment.lastIndexOf(".");
+  return dot >= 0 && QUERY_PRESERVING_EXTENSIONS.has(lastSegment.slice(dot).toLowerCase());
+}
+
+function publicQuery(incomingUrl, method) {
+  if (incomingUrl.pathname === "/api/leads") return "";
+  if (["GET", "HEAD"].includes(method) && !preservesFunctionalQuery(incomingUrl.pathname)) {
+    return safeAttributionSearch(incomingUrl.searchParams);
+  }
+  return incomingUrl.search;
+}
+
+function canonicalRedirect(incomingUrl, method) {
   const target = new URL(CANONICAL_ORIGIN);
   target.pathname = incomingUrl.pathname === "/index.html" ? "/" : incomingUrl.pathname;
-  target.search = safeAttributionSearch(incomingUrl.searchParams);
+  target.search = publicQuery(incomingUrl, method);
   return target;
 }
 
@@ -45,16 +73,16 @@ export default {
   async fetch(request) {
     const incomingUrl = new URL(request.url);
     const method = request.method.toUpperCase();
-    const isNavigation = method === "GET" || method === "HEAD";
-    const safeSearch = safeAttributionSearch(incomingUrl.searchParams);
-    const needsCanonicalRedirect = incomingUrl.protocol !== "https:"
-      || incomingUrl.hostname !== "brena.cl"
+    const normalizesNavigationQuery = ["GET", "HEAD"].includes(method)
+      && !preservesFunctionalQuery(incomingUrl.pathname);
+    const expectedQuery = publicQuery(incomingUrl, method);
+    const needsCanonicalRedirect = incomingUrl.origin !== CANONICAL_ORIGIN
       || incomingUrl.pathname === "/index.html"
-      || (isNavigation && incomingUrl.search !== safeSearch);
+      || (normalizesNavigationQuery && incomingUrl.search !== expectedQuery);
 
     if (needsCanonicalRedirect) {
       const headers = new Headers({
-        location: canonicalRedirect(incomingUrl).toString(),
+        location: canonicalRedirect(incomingUrl, method).toString(),
         "cache-control": "public, max-age=3600",
       });
       withHttpsSecurity(headers, incomingUrl);
@@ -64,7 +92,8 @@ export default {
       });
     }
 
-    const upstreamUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, ORIGIN);
+    const upstreamUrl = new URL(incomingUrl.pathname, ORIGIN);
+    upstreamUrl.search = expectedQuery;
     const headers = new Headers(request.headers);
     const clientIp = headers.get("cf-connecting-ip");
 
@@ -72,7 +101,7 @@ export default {
     headers.delete("content-length");
     if (clientIp) headers.set("x-forwarded-for", clientIp);
     else headers.delete("x-forwarded-for");
-    headers.set("x-forwarded-host", incomingUrl.host);
+    headers.set("x-forwarded-host", CANONICAL_HOST);
     headers.set("x-forwarded-proto", "https");
 
     const body = method === "GET" || method === "HEAD"
