@@ -9,7 +9,29 @@ const ATTRIBUTION_KEYS = Object.freeze([
 ]);
 const ATTRIBUTION_STORAGE_KEY = "brena.analytics.attribution.v1";
 const SAFE_TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
-const SAFE_CAMPAIGN_VALUE = /^[\p{L}\p{N} ._-]+$/u;
+const SAFE_SOURCES = new Set([
+  "bing",
+  "facebook",
+  "google",
+  "instagram",
+  "linkedin",
+  "manual",
+  "newsletter",
+]);
+const SAFE_MEDIUMS = new Set([
+  "affiliate",
+  "cpc",
+  "display",
+  "email",
+  "organic",
+  "referral",
+  "social",
+]);
+const TRACKING_CODE_PATTERNS = Object.freeze({
+  utm_campaign: /^cmp_[a-z0-9]{6,24}$/,
+  utm_content: /^cnt_[a-z0-9]{6,24}$/,
+  utm_term: /^trm_[a-z0-9]{6,24}$/,
+});
 
 const EVENT_SCHEMAS = Object.freeze({
   page_view: Object.freeze({ page_type: new Set(["landing", "success"]) }),
@@ -20,19 +42,19 @@ const EVENT_SCHEMAS = Object.freeze({
   form_error: Object.freeze({ error_type: new Set(["validation", "network", "server"]) }),
 });
 
-function sanitizeCampaignValue(value) {
+function sanitizeCampaignValue(key, value) {
   if (typeof value !== "string") return "";
-  const normalized = value.normalize("NFKC").replace(/\s+/g, " ").trim().slice(0, 120);
-  if (!normalized || !SAFE_CAMPAIGN_VALUE.test(normalized)) return "";
-  if (normalized.replace(/\D/g, "").length >= 7) return "";
-  return normalized;
+  const normalized = value.normalize("NFKC").trim();
+  if (key === "utm_source") return SAFE_SOURCES.has(normalized) ? normalized : "";
+  if (key === "utm_medium") return SAFE_MEDIUMS.has(normalized) ? normalized : "";
+  return TRACKING_CODE_PATTERNS[key]?.test(normalized) ? normalized : "";
 }
 
 function collectSafeAttribution(search) {
   const params = new URLSearchParams(search || "");
   const attribution = {};
   for (const key of ATTRIBUTION_KEYS) {
-    const value = sanitizeCampaignValue(params.get(key) || "");
+    const value = sanitizeCampaignValue(key, params.get(key) || "");
     if (value) attribution[key] = value;
   }
   return attribution;
@@ -49,7 +71,7 @@ function readStoredAttribution(storage) {
     if (keys.some((key) => !ATTRIBUTION_KEYS.includes(key))) throw new Error("unknown attribution key");
     const attribution = {};
     for (const key of keys) {
-      const value = sanitizeCampaignValue(parsed[key]);
+      const value = sanitizeCampaignValue(key, parsed[key]);
       if (!value || value !== parsed[key]) throw new Error("unsafe attribution value");
       attribution[key] = value;
     }
@@ -146,6 +168,12 @@ function validGa4Config(config) {
   );
 }
 
+function canonicalPageLocation(pathname) {
+  const url = new URL("https://brena.cl");
+  url.pathname = safePathname(pathname);
+  return url.toString();
+}
+
 function createGa4Provider({
   config,
   windowObject,
@@ -161,8 +189,20 @@ function createGa4Provider({
     const dataLayer = Array.isArray(windowObject.dataLayer) ? windowObject.dataLayer : [];
     windowObject.dataLayer = dataLayer;
     const gtag = (...args) => dataLayer.push(args);
+    gtag("consent", "default", {
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      analytics_storage: "denied",
+    });
     gtag("js", now());
-    gtag("config", config.measurementId, { send_page_view: false });
+    gtag("config", config.measurementId, {
+      send_page_view: false,
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false,
+      ignore_referrer: true,
+      page_location: canonicalPageLocation(windowObject.location?.pathname || "/"),
+    });
     documentObject.head.appendChild(script);
 
     return Object.freeze({

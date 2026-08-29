@@ -45,6 +45,8 @@ GA4 será el primer adaptador. Cuando esté habilitado:
 
 - crea la cola `dataLayer` antes de cargar la biblioteca;
 - configura `send_page_view: false` para evitar doble conteo;
+- establece antes de cualquier comando los cuatro estados de Consent Mode en `denied`, por lo que el adaptador no crea cookies analíticas;
+- fija `page_location` a la URL canónica sin query y desactiva el referrer automático;
 - envía `page_view` exclusivamente mediante la capa central;
 - carga `gtag.js` desde el origen oficial exacto;
 - nunca incluye campos no aprobados.
@@ -84,7 +86,7 @@ La estrategia es last-touch de sesión:
 3. Si no existen UTM válidas, se reutiliza la atribución segura ya guardada.
 4. Datos malformados o contaminados en `sessionStorage` se descartan.
 
-Los valores se normalizan, limitan en longitud y restringen a caracteres seguros. No se aceptan parámetros arbitrarios, `gclid`, nombres, correos, teléfonos, direcciones, RUT, montos ni texto libre.
+Los valores no son texto libre. `utm_source` y `utm_medium` usan vocabularios cerrados de canales; campaña, contenido y término usan códigos ASCII con prefijos `cmp_`, `cnt_` y `trm_`. No se aceptan parámetros arbitrarios, `gclid`, nombres, correos, teléfonos, direcciones, RUT, montos ni texto libre.
 
 El referrer se reduce a hostname normalizado de una URL HTTP(S). Se eliminan path, query, fragment, credenciales y puerto.
 
@@ -95,7 +97,7 @@ El referrer se reduce a hostname normalizado de una URL HTTP(S). Se eliminan pat
 - El intento se registra inmediatamente antes del `fetch` real.
 - 4xx/5xx y errores de red nunca generan `generate_lead`.
 - Una respuesta 2xx solo genera conversión cuando el cuerpo confirma un lead creado. El `submissionId` puede usarse internamente para reconocer la confirmación, pero jamás forma parte del evento analítico.
-- La respuesta señuelo del honeypot no cuenta como conversión.
+- La respuesta señuelo del honeypot y cualquier respuesta `preview:true` no cuentan como conversión.
 - Fallos de analytics se aíslan y no cambian estados, mensajes ni navegación del formulario.
 
 ## CTA

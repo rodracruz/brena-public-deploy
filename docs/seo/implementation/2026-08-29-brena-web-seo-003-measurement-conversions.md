@@ -36,6 +36,8 @@ GA4 queda deshabilitada por defecto. Con la configuración actual:
 
 El adaptador configurado usa `send_page_view:false`; la única page view procede de la capa central para evitar doble conteo.
 
+Antes de `config` se encolan `ad_storage`, `ad_user_data`, `ad_personalization` y `analytics_storage` como `denied`. La configuración también deshabilita señales publicitarias, ignora el referrer automático y reemplaza `page_location` por `https://brena.cl` más el pathname saneado, sin query ni fragment. Esto deja el modo futuro sin cookies analíticas persistentes ni URLs completas; Google recibirá únicamente mediciones cookieless cuando Rodrigo autorice la activación externa.
+
 ## Eventos y payloads
 
 Los campos de contexto `pathname` y UTM se agregan dentro de la capa central. Los callsites no construyen dimensiones arbitrarias.
@@ -63,7 +65,7 @@ No se implementan eventos de WhatsApp, teléfono ni correo porque esos CTA no ex
 - 2xx sin evidencia de creación: no genera conversión;
 - 2xx con confirmación: `generate_lead`.
 
-La respuesta señuelo del honeypot es 2xx, pero carece de confirmación de creación y no cuenta como lead. El `submissionId` se consulta únicamente para distinguir esa confirmación; no se copia, transforma ni envía a analytics.
+La respuesta señuelo del honeypot es 2xx, pero carece de confirmación de creación y no cuenta como lead. Las respuestas `preview:true` tampoco cuentan. Se exige `preview:false`; el `submissionId` se consulta únicamente para distinguir esa confirmación, pero no se copia, transforma ni envía a analytics.
 
 ## Atribución
 
@@ -75,7 +77,10 @@ La estrategia es **last-touch de sesión**.
 - La persistencia usa únicamente `sessionStorage` bajo una clave versionada.
 - No se usan cookies ni `localStorage`.
 - Storage malformado, con claves extrañas o valores inseguros se elimina.
-- Los valores se normalizan, limitan a 120 caracteres, restringen a letras/números/espacio/punto/guion/underscore y descartan patrones numéricos de alto riesgo.
+- `utm_source` usa un vocabulario cerrado: `bing`, `facebook`, `google`, `instagram`, `linkedin`, `manual` o `newsletter`.
+- `utm_medium` usa un vocabulario cerrado: `affiliate`, `cpc`, `display`, `email`, `organic`, `referral` o `social`.
+- Campaña, contenido y término deben ser códigos ASCII no semánticos de 6 a 24 caracteres tras los prefijos `cmp_`, `cnt_` y `trm_` respectivamente.
+- Valores como nombres, direcciones, correos ofuscados, teléfonos o texto libre se descartan en vez de sanearse parcialmente.
 - Parámetros desconocidos, email, teléfono, nombre, `gclid` y cualquier otra query no entran al estado analítico.
 
 El referrer se reduce a hostname HTTP(S) en minúsculas, sin `www`, credenciales, puerto, path, query ni fragment.
@@ -140,7 +145,7 @@ Los ciclos RED demostraron antes de implementar:
 - ausencia de scripts y atributos declarativos en HTML;
 - falta de un límite ejecutable entre validación local y request.
 
-La suite prueba dataflow real de los módulos y limita los dobles al proveedor externo o al límite de red. Cubre configuración, CSP, payloads, PII, UTM, storage contaminado, referrer, proveedor caído, conteo único, 2xx/4xx/5xx/red, honeypot, assets HTTP y las 58 pruebas heredadas.
+La suite prueba dataflow real de los módulos y limita los dobles al proveedor externo o al límite de red. Cubre configuración, CSP, payloads, PII semántica en UTM, storage contaminado, referrer, Consent Mode, proveedor caído, conteo único, validación local, preview, 2xx/4xx/5xx/red, honeypot, assets HTTP y las 58 pruebas heredadas.
 
 ## Automático por Codex
 
@@ -156,7 +161,7 @@ La suite prueba dataflow real de los módulos y limita los dobles al proveedor e
 
 1. Crear o confirmar la propiedad y stream web GA4.
 2. Entregar el Measurement ID real por el canal de configuración de Render, no por un commit.
-3. Confirmar explícitamente la decisión de consentimiento/cookies aplicable. Si requiere interacción de usuario, debe aprobarse e implementarse ese mecanismo antes de poner `BRENA_ANALYTICS_ENABLED=1`.
+3. Confirmar explícitamente la decisión de consentimiento/cookies aplicable. SEO-003 mantiene siempre `analytics_storage=denied`; cualquier futura habilitación de cookies o mecanismo de consentimiento interactivo requiere un ticket y aprobación separados antes de cambiar este contrato.
 4. Activar ambas variables solo después del punto anterior.
 5. Verificar `page_view`, CTA, funnel y `generate_lead` en DebugView/Realtime con un lead sintético.
 6. Crear/verificar Search Console y enviar el sitemap.
@@ -165,8 +170,12 @@ La suite prueba dataflow real de los módulos y limita los dobles al proveedor e
 
 - GA4 no puede validarse en DebugView sin un ID y una activación autorizados.
 - La decisión jurídica sobre consentimiento/cookies no la determina el código.
-- Los nombres de campaña deben gobernarse externamente; el saneamiento evita datos obvios y caracteres peligrosos, pero no puede inferir semánticamente si una cadena alfabética corresponde a una persona.
+- La nomenclatura de campañas debe respetar los códigos opacos documentados; ampliar vocabularios o formatos requiere revisión de privacidad y pruebas.
 - Cualquier nuevo CTA o evento requiere ampliar su schema y pruebas; no debe enviar texto del DOM.
+
+## Revisión independiente
+
+La primera revisión del rango completo encontró 2 Critical, 2 Important y 1 Minor: cookies GA4 por defecto, UTM con texto potencialmente personal, conversión en preview, validación local incompleta y CSP abierta ante un objeto inválido. Cada caso se reprodujo con una prueba RED y se corrigió mediante Consent Mode denegado, ubicación/referrer gobernados, taxonomía UTM cerrada, `preview:false`, validación equivalente y un único validador efectivo de configuración.
 
 ## Fuera de alcance
 

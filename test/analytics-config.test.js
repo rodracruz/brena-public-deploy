@@ -4,6 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { resolveAnalyticsConfig } = require("../src/analytics-config");
+const { contentSecurityPolicy } = require("../src/security-headers");
 
 test("analytics stays disabled when configuration is absent or incomplete", () => {
   assert.deepEqual(resolveAnalyticsConfig({}), {
@@ -45,4 +46,15 @@ test("analytics requires explicit enablement and a valid GA4 measurement ID", ()
     provider: "ga4",
     measurementId: "G-ABC1234567",
   });
+});
+
+test("CSP refuses to open for an invalid effective GA4 configuration", () => {
+  const csp = contentSecurityPolicy({
+    enabled: true,
+    provider: "ga4",
+    measurementId: "invalid",
+  });
+
+  assert.equal(csp.includes("googletagmanager.com"), false);
+  assert.equal(csp.includes("google-analytics.com"), false);
 });

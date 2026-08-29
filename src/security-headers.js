@@ -1,5 +1,7 @@
 "use strict";
 
+const { isEnabledGa4Config } = require("./analytics-config");
+
 const BASE_DIRECTIVES = [
   ["default-src", "'self'"],
   ["base-uri", "'self'"],
@@ -15,8 +17,7 @@ const BASE_DIRECTIVES = [
 ];
 
 function contentSecurityPolicy(analyticsConfig = {}) {
-  const ga4Enabled = analyticsConfig.enabled === true
-    && analyticsConfig.provider === "ga4";
+  const ga4Enabled = isEnabledGa4Config(analyticsConfig);
   return BASE_DIRECTIVES.map((directive) => {
     if (!Array.isArray(directive)) return directive;
     const [name, value] = directive;

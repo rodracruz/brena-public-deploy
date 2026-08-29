@@ -43,7 +43,7 @@ test("page views emit only safe context and last-touch session attribution", () 
     provider: { track: (eventName, payload) => calls.push({ eventName, payload }) },
     location: {
       pathname: "/",
-      search: "?utm_source=Google&utm_medium=cpc&utm_campaign=venta-casa&email=ana%40example.cl&gclid=secret",
+      search: "?utm_source=google&utm_medium=cpc&utm_campaign=cmp_sale2026&email=ana%40example.cl&gclid=secret",
     },
     referrer: "https://www.google.com/search?q=deuda&email=ana%40example.cl#result",
     storage,
@@ -55,35 +55,35 @@ test("page views emit only safe context and last-touch session attribution", () 
     payload: {
       pathname: "/",
       page_type: "landing",
-      utm_source: "Google",
+      utm_source: "google",
       utm_medium: "cpc",
-      utm_campaign: "venta-casa",
+      utm_campaign: "cmp_sale2026",
       referrer_domain: "google.com",
     },
   }]);
   assert.deepEqual(JSON.parse(storage.snapshot()[ATTRIBUTION_STORAGE_KEY]), {
-    utm_source: "Google",
+    utm_source: "google",
     utm_medium: "cpc",
-    utm_campaign: "venta-casa",
+    utm_campaign: "cmp_sale2026",
   });
 });
 
 test("last-touch replaces prior attribution only when the current URL has valid UTM", () => {
   const storage = memoryStorage({
-    [ATTRIBUTION_STORAGE_KEY]: JSON.stringify({ utm_source: "newsletter", utm_campaign: "invierno" }),
+    [ATTRIBUTION_STORAGE_KEY]: JSON.stringify({ utm_source: "newsletter", utm_campaign: "cmp_winter2026" }),
   });
 
   assert.deepEqual(resolveSessionAttribution("", storage), {
     utm_source: "newsletter",
-    utm_campaign: "invierno",
+    utm_campaign: "cmp_winter2026",
   });
-  assert.deepEqual(resolveSessionAttribution("?utm_source=linkedin&utm_content=video_1", storage), {
+  assert.deepEqual(resolveSessionAttribution("?utm_source=linkedin&utm_content=cnt_video01", storage), {
     utm_source: "linkedin",
-    utm_content: "video_1",
+    utm_content: "cnt_video01",
   });
   assert.deepEqual(JSON.parse(storage.snapshot()[ATTRIBUTION_STORAGE_KEY]), {
     utm_source: "linkedin",
-    utm_content: "video_1",
+    utm_content: "cnt_video01",
   });
 });
 
@@ -98,9 +98,29 @@ test("unknown parameters, PII-like campaign values and contaminated storage are 
   assert.deepEqual(resolveSessionAttribution("", storage), {});
   assert.equal(storage.getItem(ATTRIBUTION_STORAGE_KEY), null);
   assert.deepEqual(resolveSessionAttribution(
-    "?utm_source=ana%40example.cl&utm_medium=%2B56912345678&utm_campaign=12345678&utm_term=venta%20casa&name=Ana",
+    "?utm_source=ana%40example.cl&utm_medium=%2B56912345678&utm_campaign=12345678&utm_term=trm_home01&name=Ana",
     storage,
-  ), { utm_term: "venta casa" });
+  ), { utm_term: "trm_home01" });
+});
+
+test("semantic PII-looking UTM values are rejected while approved campaign codes survive", () => {
+  const storage = memoryStorage();
+  assert.deepEqual(resolveSessionAttribution(
+    "?utm_source=Maria&utm_medium=ana_silva&utm_campaign=Maria%20Perez&utm_content=Los_Aromos_123&utm_term=ana.silva",
+    storage,
+  ), {});
+  assert.equal(storage.getItem(ATTRIBUTION_STORAGE_KEY), null);
+
+  assert.deepEqual(resolveSessionAttribution(
+    "?utm_source=google&utm_medium=cpc&utm_campaign=cmp_sale2026&utm_content=cnt_video01&utm_term=trm_home01",
+    storage,
+  ), {
+    utm_source: "google",
+    utm_medium: "cpc",
+    utm_campaign: "cmp_sale2026",
+    utm_content: "cnt_video01",
+    utm_term: "trm_home01",
+  });
 });
 
 test("referrer is reduced to a hostname and rejects unsafe protocols", () => {
@@ -189,8 +209,16 @@ test("disabled or invalid GA4 configuration creates no external side effects", (
 
 test("enabled GA4 adapter loads only gtag and suppresses automatic page views", () => {
   const appended = [];
-  const windowObject = {};
+  const windowObject = {
+    location: {
+      pathname: "/",
+      search: "?email=ana%40example.cl&utm_campaign=cmp_sale2026",
+      hash: "#ana",
+    },
+  };
   const documentObject = {
+    cookie: "existing_functional_cookie=1",
+    referrer: "https://search.example/path?phone=56912345678#result",
     createElement(tagName) { return { tagName }; },
     head: { appendChild: (node) => appended.push(node) },
   };
@@ -208,9 +236,22 @@ test("enabled GA4 adapter loads only gtag and suppresses automatic page views", 
     src: "https://www.googletagmanager.com/gtag/js?id=G-ABC1234567",
   }]);
   assert.deepEqual(windowObject.dataLayer, [
+    ["consent", "default", {
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      analytics_storage: "denied",
+    }],
     ["js", new Date("2026-08-29T12:00:00.000Z")],
-    ["config", "G-ABC1234567", { send_page_view: false }],
+    ["config", "G-ABC1234567", {
+      send_page_view: false,
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false,
+      ignore_referrer: true,
+      page_location: "https://brena.cl/",
+    }],
   ]);
+  assert.equal(documentObject.cookie, "existing_functional_cookie=1");
 
   provider.track("form_start", { pathname: "/" });
   assert.deepEqual(windowObject.dataLayer.at(-1), ["event", "form_start", { pathname: "/" }]);

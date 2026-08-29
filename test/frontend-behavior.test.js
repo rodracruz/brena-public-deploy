@@ -166,8 +166,10 @@ test("local validation failure stops before submit attempt and network request",
 test("2xx without creation evidence and 4xx or 5xx never generate a lead event", async () => {
   for (const responseFixture of [
     { ok: true, status: 202, body: { ok: true, message: "accepted" } },
-    { ok: false, status: 400, body: { ok: false, errors: { name: "required" } } },
-    { ok: false, status: 500, body: { ok: false } },
+    { ok: true, status: 202, body: { ok: true, submissionId: "preview-123", preview: true } },
+    { ok: false, status: 400, errorType: "validation", body: { ok: false, errors: { name: "required" } } },
+    { ok: false, status: 429, errorType: "server", body: { ok: false } },
+    { ok: false, status: 500, errorType: "server", body: { ok: false } },
   ]) {
     const calls = [];
     const result = await submitLead({
@@ -185,10 +187,35 @@ test("2xx without creation evidence and 4xx or 5xx never generate a lead event",
     if (!responseFixture.ok) {
       assert.deepEqual(calls.at(-1), {
         eventName: "form_error",
-        payload: { error_type: responseFixture.status < 500 ? "validation" : "server" },
+        payload: { error_type: responseFixture.errorType },
       });
     }
   }
+});
+
+test("malformed contact and manipulated property values fail local validation before request", async () => {
+  const { localSubmissionErrors } = require("../frontend/public/scripts.js");
+  const errors = localSubmissionErrors({
+    name: "Ana",
+    phone: "123",
+    email: "not-an-email",
+    region: "unknown-region",
+    commune: "",
+    propertyType: "palacio",
+    situation: "unknown",
+    urgency: "tomorrow",
+    message: "",
+    consent: true,
+  });
+
+  assert.deepEqual(errors, {
+    contact: "Ingresa un teléfono o correo válido.",
+    region: "Selecciona una región.",
+    commune: "Escribe la comuna de la propiedad.",
+    propertyType: "Selecciona el tipo de propiedad.",
+    situation: "Selecciona la situación que mejor te representa.",
+    urgency: "Selecciona cuándo necesitas resolverlo.",
+  });
 });
 
 test("network failure is categorized without leaking its message and remains throwable to the UI", async () => {

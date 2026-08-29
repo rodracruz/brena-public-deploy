@@ -7,6 +7,17 @@ const CAMPAIGN_KEYS = [
   "utm_content",
   "utm_term",
 ];
+const REGION_VALUES = new Set([
+  "arica_parinacota", "tarapaca", "antofagasta", "atacama", "coquimbo",
+  "valparaiso", "metropolitana", "ohiggins", "maule", "nuble", "biobio",
+  "araucania", "los_rios", "los_lagos", "aysen", "magallanes",
+]);
+const PROPERTY_VALUES = new Set(["casa", "departamento", "terreno", "otro"]);
+const SITUATION_VALUES = new Set([
+  "mora_hipotecaria", "propiedad_abandonada", "herencia", "falta_liquidez",
+  "necesita_vender_rapido", "otro",
+]);
+const URGENCY_VALUES = new Set(["sin_apuro", "proximos_3_meses", "proximo_mes", "urgente"]);
 
 function collectAttribution(search) {
   const params = new URLSearchParams(search || "");
@@ -62,6 +73,36 @@ function trackSafely(analytics, eventName, payload) {
   }
 }
 
+function validPhone(value) {
+  const candidate = String(value || "").replace(/[\s().-]/g, "");
+  return /^\+?[0-9]{8,15}$/.test(candidate);
+}
+
+function validEmail(value) {
+  const candidate = String(value || "").trim().toLowerCase();
+  return candidate.length <= 160 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(candidate);
+}
+
+function localSubmissionErrors(submission) {
+  const errors = {};
+  if (!String(submission.name || "").trim()) errors.name = "Escribe tu nombre.";
+  if (!validPhone(submission.phone) && !validEmail(submission.email)) {
+    errors.contact = "Ingresa un teléfono o correo válido.";
+  }
+  if (!REGION_VALUES.has(submission.region)) errors.region = "Selecciona una región.";
+  if (!String(submission.commune || "").trim()) errors.commune = "Escribe la comuna de la propiedad.";
+  if (!PROPERTY_VALUES.has(submission.propertyType)) errors.propertyType = "Selecciona el tipo de propiedad.";
+  if (!SITUATION_VALUES.has(submission.situation)) {
+    errors.situation = "Selecciona la situación que mejor te representa.";
+  }
+  if (!URGENCY_VALUES.has(submission.urgency)) errors.urgency = "Selecciona cuándo necesitas resolverlo.";
+  if (String(submission.message || "").trim().length > 1200) {
+    errors.message = "El mensaje puede tener hasta 1.200 caracteres.";
+  }
+  if (submission.consent !== true) errors.consent = "Necesitamos tu autorización para contactarte.";
+  return errors;
+}
+
 function trackPageViewOnce(analytics) {
   if (!analytics || (typeof analytics !== "object" && typeof analytics !== "function")) return false;
   if (pageViewTracked.has(analytics)) return false;
@@ -106,13 +147,14 @@ async function submitLead({ submission, fetchImpl, analytics }) {
     const body = await response.json().catch(() => ({}));
     const confirmed = response.ok
       && body?.ok === true
+      && body.preview === false
       && typeof body.submissionId === "string"
       && Boolean(body.submissionId.trim());
     if (confirmed) {
       trackSafely(analytics, "generate_lead", { submission_status: "created" });
     } else if (!response.ok) {
       trackSafely(analytics, "form_error", {
-        error_type: response.status < 500 ? "validation" : "server",
+        error_type: [400, 422].includes(response.status) ? "validation" : "server",
       });
     }
     return { response, body, confirmed };
@@ -141,6 +183,7 @@ if (typeof module !== "undefined" && module.exports) {
     collectAttribution,
     initializeCtaTracking,
     initializeFormStartTracking,
+    localSubmissionErrors,
     safeContextUrl,
     submitLead,
     submitValidatedLead,
@@ -307,11 +350,8 @@ function initializeLeadForm(analytics) {
       search: window.location.search,
     });
 
-    if (!submission.name.trim()) markError("name", "Escribe tu nombre.");
-    if (!submission.phone.trim() && !submission.email.trim()) {
-      markError("contact", "Ingresa un teléfono o correo válido.");
-    }
-    if (!submission.consent) markError("consent", "Necesitamos tu autorización para contactarte.");
+    Object.entries(localSubmissionErrors(submission))
+      .forEach(([name, message]) => markError(name, message));
 
     const localErrors = [...form.querySelectorAll("[data-error-for]")].filter((element) => element.textContent);
     if (localErrors.length > 0) {
