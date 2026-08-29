@@ -63,7 +63,7 @@ const PAGES = [
       { question: "¿Tener una hipoteca impide conversar con BRENA?", answer: "No. La obligación forma parte de la evaluación inicial, pero su saldo y condiciones deben confirmarse con la entidad correspondiente." },
       { question: "¿BRENA entrega asesoría legal o financiera?", answer: "No. BRENA evalúa alternativas inmobiliarias y económicas. Los asuntos jurídicos, bancarios o crediticios requieren confirmación del profesional o entidad competente." },
     ],
-    officialSource: { label: "ChileAtiende: alzamiento de hipotecas y prendas", url: "https://www.chileatiende.gob.cl/fichas/85947-alzamiento-de-hipotecas-y-prendas" },
+    officialSource: { label: "ChileAtiende: cancelación de hipotecas y alzamiento de prohibiciones", url: "https://www.chileatiende.gob.cl/fichas/12155-cancelacion-de-los-registros-de-hipotecas-y-alzamiento-de-prohibiciones" },
     relatedLinks: ["/", "/vender-propiedad-rapido"],
   },
   {

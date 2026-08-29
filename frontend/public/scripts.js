@@ -178,6 +178,19 @@ async function submitValidatedLead({
   return submitLead({ submission, fetchImpl, analytics });
 }
 
+function showLeadSuccess({ form, formTopline, successState, status }) {
+  if (!form || !formTopline || !successState) {
+    if (status) status.textContent = "Recibimos tus datos. El equipo Brena revisará tu caso.";
+    return false;
+  }
+  form.hidden = true;
+  formTopline.hidden = true;
+  successState.hidden = false;
+  if (status) status.textContent = "";
+  successState.focus?.();
+  return true;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     buildSubmission,
@@ -186,6 +199,7 @@ if (typeof module !== "undefined" && module.exports) {
     initializeFormStartTracking,
     localSubmissionErrors,
     safeContextUrl,
+    showLeadSuccess,
     submitLead,
     submitValidatedLead,
     trackPageViewOnce,
@@ -394,10 +408,12 @@ function initializeLeadForm(analytics) {
         return;
       }
 
-      form.hidden = true;
-      document.querySelector(".form-topline").hidden = true;
-      successState.hidden = false;
-      successState.focus();
+      showLeadSuccess({
+        form,
+        formTopline: document.querySelector(".form-topline"),
+        successState,
+        status,
+      });
     } catch {
       if (errorSummary) {
         errorSummary.textContent = "No pudimos conectarnos. Revisa tu conexión e intenta nuevamente.";

@@ -46,10 +46,23 @@ test("form contract and contextual hints remain exact across all surfaces", () =
     const names = [...new Set([...form.matchAll(/\bname="([^"]+)"/g)].map((match) => match[1]))];
     assert.deepEqual(names, expectedNames);
     assert.doesNotMatch(html, /\bchecked\b|aria-selected/);
+    assert.equal((html.match(/data-success-state/g) || []).length, 1);
+    assert.match(html, /data-success-state tabindex="-1" hidden/);
+    assert.equal((html.match(/class="privacy-note"/g) || []).length, 1);
   }
   assert.equal((artifacts.get("vender-propiedad-rapido.html").match(/choice-context/g) || []).length, 1);
   assert.equal((artifacts.get("vender-propiedad-con-deudas.html").match(/choice-context/g) || []).length, 1);
   assert.equal((artifacts.get("vender-propiedad-en-mal-estado.html").match(/choice-context/g) || []).length, 0);
+});
+
+test("homepage preserves the established six situations, six FAQs and footer navigation", () => {
+  const home = artifacts.get("index.html");
+  assert.equal((home.match(/<article class="situation-card/g) || []).length, 6);
+  const faq = home.match(/<div class="faq-list"[^>]*>([\s\S]*?)<\/div><\/div><\/section>/)[1];
+  assert.equal((faq.match(/<details>/g) || []).length, 6);
+  assert.match(home, /class="shell footer-top"/);
+  assert.match(home, /aria-label="Navegación de pie de página"/);
+  for (const target of ["#situaciones", "#proceso", "#preguntas", "#privacidad"]) assert.match(home, new RegExp(`href="${target}"`));
 });
 
 test("commercial content is differentiated and respects approved claim boundaries", () => {
@@ -59,6 +72,7 @@ test("commercial content is differentiated and respects approved claim boundarie
   assert.match(debt, /orientación general/i);
   assert.match(debt, /no reemplaza asesoría legal o financiera/i);
   assert.match(debt, /chileatiende\.gob\.cl/);
+  assert.match(debt, /chileatiende\.gob\.cl\/fichas\/12155-cancelacion-de-los-registros-de-hipotecas-y-alzamiento-de-prohibiciones/);
   assert.match(condition, /experiencia directa en construcción, mejoramiento y remodelación/i);
   assert.match(condition, /Vender la propiedad en su estado actual/);
   assert.match(condition, /Realizar mejoras acotadas/);

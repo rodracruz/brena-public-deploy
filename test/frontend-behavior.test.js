@@ -6,6 +6,7 @@ const {
   buildSubmission,
   initializeCtaTracking,
   initializeFormStartTracking,
+  showLeadSuccess,
   trackPageViewOnce,
   submitLead,
   submitValidatedLead,
@@ -80,6 +81,32 @@ test("tracks the explicit static page type only once even if initialization repe
   trackPageViewOnce(analytics, "commercial_fast_sale");
 
   assert.deepEqual(calls, [{ eventName: "page_view", payload: { page_type: "commercial_fast_sale" } }]);
+});
+
+test("confirmed submission reveals an accessible success state atomically", () => {
+  const form = { hidden: false };
+  const formTopline = { hidden: false };
+  let focused = false;
+  const successState = { hidden: true, focus: () => { focused = true; } };
+  const status = { textContent: "Enviando" };
+
+  assert.equal(showLeadSuccess({ form, formTopline, successState, status }), true);
+  assert.equal(form.hidden, true);
+  assert.equal(formTopline.hidden, true);
+  assert.equal(successState.hidden, false);
+  assert.equal(focused, true);
+  assert.equal(status.textContent, "");
+});
+
+test("missing success markup keeps the form visible and provides a safe confirmation", () => {
+  const form = { hidden: false };
+  const formTopline = { hidden: false };
+  const status = { textContent: "Enviando" };
+
+  assert.equal(showLeadSuccess({ form, formTopline, successState: null, status }), false);
+  assert.equal(form.hidden, false);
+  assert.equal(formTopline.hidden, false);
+  assert.match(status.textContent, /Recibimos tus datos/);
 });
 
 test("CTA tracking uses only declarative stable identifiers", () => {
