@@ -11,7 +11,7 @@ const RELATED_SITUATIONS = new Set([null, "necesita_vender_rapido", "mora_hipote
 
 const PAGES = [
   {
-    route: "/", outputFile: "index.html", pageType: "homepage", cluster: "BR-01",
+    route: "/", outputFile: "index.html", pageType: "homepage", cluster: "BR-01", breadcrumbLabel: null,
     title: "Brena | Soluciones para propiedades complejas",
     description: "¿Tienes una propiedad con deudas, desocupada, heredada o que necesitas vender pronto? Cuéntanos tu caso y descubre si Brena puede ayudarte.",
     h1: "Tu propiedad puede volver a ser una solución.", canonical: "https://brena.cl/",
@@ -24,7 +24,7 @@ const PAGES = [
     relatedLinks: ["/vender-propiedad-rapido", "/vender-propiedad-con-deudas", "/vender-propiedad-en-mal-estado"],
   },
   {
-    route: "/vender-propiedad-rapido", outputFile: "vender-propiedad-rapido.html", pageType: "commercial_fast_sale", cluster: "BR-02",
+    route: "/vender-propiedad-rapido", outputFile: "vender-propiedad-rapido.html", pageType: "commercial_fast_sale", cluster: "BR-02", breadcrumbLabel: "Vender propiedad rápido",
     title: "Vender una propiedad rápido: evalúa tus alternativas | Brena",
     description: "Si necesitas vender una propiedad pronto, Brena evalúa ubicación, obligaciones, estado y plazo para estructurar una alternativa realista y sin promesas.",
     h1: "¿Necesitas vender una propiedad pronto? Evalúa antes de decidir.", canonical: "https://brena.cl/vender-propiedad-rapido",
@@ -45,7 +45,7 @@ const PAGES = [
     relatedLinks: ["/", "/vender-propiedad-con-deudas", "/vender-propiedad-en-mal-estado"],
   },
   {
-    route: "/vender-propiedad-con-deudas", outputFile: "vender-propiedad-con-deudas.html", pageType: "commercial_debt", cluster: "BR-03",
+    route: "/vender-propiedad-con-deudas", outputFile: "vender-propiedad-con-deudas.html", pageType: "commercial_debt", cluster: "BR-03", breadcrumbLabel: "Vender propiedad con deudas",
     title: "Vender una propiedad con deudas o hipoteca | Brena",
     description: "Brena evalúa deudas, costos, estado y alternativas de una propiedad. Cada obligación puede requerir confirmación del banco, acreedor o profesional.",
     h1: "Una propiedad con deudas necesita una evaluación completa.", canonical: "https://brena.cl/vender-propiedad-con-deudas",
@@ -67,7 +67,7 @@ const PAGES = [
     relatedLinks: ["/", "/vender-propiedad-rapido"],
   },
   {
-    route: "/vender-propiedad-en-mal-estado", outputFile: "vender-propiedad-en-mal-estado.html", pageType: "commercial_property_condition", cluster: "BR-04",
+    route: "/vender-propiedad-en-mal-estado", outputFile: "vender-propiedad-en-mal-estado.html", pageType: "commercial_property_condition", cluster: "BR-04", breadcrumbLabel: "Vender propiedad en mal estado",
     title: "Vender una propiedad en mal estado | Brena",
     description: "Brena compara vender una propiedad como está, realizar mejoras acotadas o remodelar, considerando costos, tiempo y viabilidad de cada caso.",
     h1: "El estado de una propiedad no se evalúa solo por lo que cuesta reparar.", canonical: "https://brena.cl/vender-propiedad-en-mal-estado",
@@ -96,12 +96,19 @@ function validateCatalog(pages) {
     for (const field of required) if (!page[field]) throw new Error(`${field} is required`);
     if (!PAGE_TYPES.has(page.pageType)) throw new Error(`pageType is not allowed: ${page.pageType}`);
     if (!RELATED_SITUATIONS.has(page.relatedSituation)) throw new Error(`relatedSituation is not allowed: ${page.relatedSituation}`);
+    if (page.pageType === "homepage") {
+      if (page.breadcrumbLabel !== null) throw new Error("homepage pageType breadcrumbLabel must be null");
+    } else if (typeof page.breadcrumbLabel !== "string" || !page.breadcrumbLabel.trim()) {
+      throw new Error(`breadcrumbLabel is required for ${page.route}`);
+    }
     const expectedCanonical = `https://brena.cl${page.route === "/" ? "/" : page.route}`;
     if (page.canonical !== expectedCanonical) throw new Error(`canonical must match route: ${page.canonical}`);
   }
   for (const field of ["route", "outputFile", "pageType", "title", "h1", "canonical"]) {
     if (new Set(pages.map((page) => page[field])).size !== pages.length) throw new Error(`${field} must be unique`);
   }
+  const breadcrumbLabels = pages.filter(({ pageType }) => pageType !== "homepage").map(({ breadcrumbLabel }) => breadcrumbLabel);
+  if (new Set(breadcrumbLabels).size !== breadcrumbLabels.length) throw new Error("breadcrumbLabel must be unique");
   const routes = new Set(pages.map((page) => page.route));
   for (const page of pages) {
     if (!Array.isArray(page.relatedLinks) || page.relatedLinks.some((route) => !routes.has(route))) {

@@ -54,3 +54,26 @@ test("only approved pages receive contextual form hints", () => {
     null,
   ]);
 });
+
+test("catalog provides exact breadcrumb labels", () => {
+  assert.deepEqual(PAGES.map(({ route, breadcrumbLabel }) => [route, breadcrumbLabel]), [
+    ["/", null],
+    ["/vender-propiedad-rapido", "Vender propiedad rápido"],
+    ["/vender-propiedad-con-deudas", "Vender propiedad con deudas"],
+    ["/vender-propiedad-en-mal-estado", "Vender propiedad en mal estado"],
+  ]);
+});
+
+test("catalog rejects invalid breadcrumb labels", () => {
+  const missing = PAGES.map((page) => ({ ...page }));
+  delete missing[1].breadcrumbLabel;
+  assert.throws(() => validateCatalog(missing), /breadcrumbLabel/);
+
+  const homepage = PAGES.map((page) => ({ ...page }));
+  homepage[0].breadcrumbLabel = "Inicio";
+  assert.throws(() => validateCatalog(homepage), /breadcrumbLabel/);
+
+  const duplicate = PAGES.map((page) => ({ ...page }));
+  duplicate[2].breadcrumbLabel = duplicate[1].breadcrumbLabel;
+  assert.throws(() => validateCatalog(duplicate), /breadcrumbLabel/);
+});
