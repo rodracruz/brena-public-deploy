@@ -65,6 +65,37 @@ test("homepage preserves the established six situations, six FAQs and footer nav
   for (const target of ["#situaciones", "#proceso", "#preguntas", "#privacidad"]) assert.match(home, new RegExp(`href="${target}"`));
 });
 
+test("homepage trust section states only the approved identity and limits", () => {
+  const home = artifacts.get("index.html");
+  for (const statement of [
+    "Evaluación inmobiliaria con una mirada económica y constructiva.",
+    "BRENA evalúa propiedades complejas y estructura alternativas según las condiciones de cada caso.",
+    "experiencia directa en construcción, mejoramiento y remodelación",
+    "puede coordinar una visita presencial a la propiedad",
+    "recibe solicitudes desde distintas regiones de Chile",
+    "no garantiza compra, venta, precio, plazo ni valorización",
+  ]) {
+    assert.equal(home.toLocaleLowerCase("es-CL").includes(statement.toLocaleLowerCase("es-CL")), true, statement);
+  }
+
+  for (const prohibited of [
+    /\bRUT\b|razón social|años de experiencia|certificad[oa]|testimonio/i,
+    /mailto:|href="tel:|whatsapp/i,
+  ]) assert.doesNotMatch(home, prohibited);
+});
+
+test("all pages use BRENA for canonical shared brand signals", () => {
+  for (const page of PAGES) {
+    const html = artifacts.get(page.outputFile);
+    assert.match(html, /<meta property="og:site_name" content="BRENA">/);
+    assert.match(html, /aria-label="BRENA, inicio"/);
+    assert.equal((html.match(/alt="BRENA"/g) || []).length, 2);
+    assert.match(html, /<h3>Gracias por confiar en BRENA\.<\/h3>/);
+    assert.match(html, /<strong>Responsable:<\/strong> BRENA\./);
+    assert.match(html, /© <span data-current-year>2026<\/span> BRENA\./);
+  }
+});
+
 test("commercial content is differentiated and respects approved claim boundaries", () => {
   const fast = artifacts.get("vender-propiedad-rapido.html");
   const debt = artifacts.get("vender-propiedad-con-deudas.html");
