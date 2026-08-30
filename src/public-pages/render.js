@@ -65,12 +65,20 @@ function renderHeader(page) {
   </header>`;
 }
 
+function renderBreadcrumb(page) {
+  if (page.route === "/") return "<!-- página principal -->";
+  return `<nav class="breadcrumb" aria-label="Migas de pan" itemscope itemtype="https://schema.org/BreadcrumbList"><ol>
+    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><a itemprop="item" href="${escapeHtml(SITE_IDENTITY.siteUrl)}"><span itemprop="name">Inicio</span></a><meta itemprop="position" content="1"></li>
+    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><span itemprop="name" aria-current="page">${escapeHtml(page.breadcrumbLabel)}</span><link itemprop="item" href="${escapeHtml(page.canonical)}"><meta itemprop="position" content="2"></li>
+  </ol></nav>`;
+}
+
 function renderHero(page) {
   const home = page.route === "/";
   return `<section class="${home ? "hero" : "page-hero"}" id="inicio" aria-labelledby="hero-title">
     <div class="shell ${home ? "hero-grid" : "page-hero-grid"}">
       <div class="hero-copy" data-reveal>
-        ${home ? "<!-- página principal -->" : '<nav class="breadcrumb" aria-label="Migas de pan"><ol><li><a href="/">Inicio</a></li><li aria-current="page">Evaluación</li></ol></nav>'}
+        ${renderBreadcrumb(page)}
         <p class="eyebrow"><span></span> ${escapeHtml(page.eyebrow)}</p>
         <h1 id="hero-title">${escapeHtml(page.h1)}</h1>
         <p class="hero-lead">${escapeHtml(page.lead)}</p>

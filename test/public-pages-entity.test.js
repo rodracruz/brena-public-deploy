@@ -17,6 +17,10 @@ function descendantItemProperties(node) {
     .map((candidate) => candidate.attrs.itemprop);
 }
 
+function propertyNodes(node, property) {
+  return findAll(node, (candidate) => candidate.attrs?.itemprop === property);
+}
+
 test("site identity exposes only approved immutable public fields", () => {
   const { SITE_IDENTITY } = require("../src/public-pages/site-identity");
 
@@ -69,4 +73,29 @@ test("interior and success pages do not duplicate the site entity", () => {
   const success = parseHtml(fs.readFileSync("frontend/public/success.html", "utf8"));
   assert.equal(nodesByType(success, "Organization").length, 0);
   assert.equal(nodesByType(success, "WebSite").length, 0);
+});
+
+test("each P1 page exposes one visible two-item BreadcrumbList", () => {
+  const expected = [
+    [PAGES[1], "Vender propiedad rápido"],
+    [PAGES[2], "Vender propiedad con deudas"],
+    [PAGES[3], "Vender propiedad en mal estado"],
+  ];
+
+  for (const [page, label] of expected) {
+    const root = parseHtml(renderPage(page));
+    const lists = nodesByType(root, "BreadcrumbList");
+    assert.equal(lists.length, 1, page.route);
+    const items = nodesByType(lists[0], "ListItem");
+    assert.equal(items.length, 2, page.route);
+    assert.deepEqual(items.map((item) => textContent(propertyNodes(item, "name")[0])), ["Inicio", label]);
+    assert.deepEqual(items.map((item) => propertyNodes(item, "position")[0].attrs.content), ["1", "2"]);
+    assert.equal(propertyNodes(items[0], "item")[0].attrs.href, "https://brena.cl/");
+    assert.equal(propertyNodes(items[1], "item")[0].attrs.href, page.canonical);
+    assert.equal(propertyNodes(items[1], "name")[0].attrs["aria-current"], "page");
+  }
+
+  assert.equal(nodesByType(parseHtml(renderPage(PAGES[0])), "BreadcrumbList").length, 0);
+  const success = parseHtml(fs.readFileSync("frontend/public/success.html", "utf8"));
+  assert.equal(nodesByType(success, "BreadcrumbList").length, 0);
 });
