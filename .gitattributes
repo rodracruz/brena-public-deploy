@@ -1,0 +1,7 @@
+# Keep the static page generator input and its tracked outputs byte-stable.
+/src/public-pages/fragments/lead-form.html text eol=lf
+/frontend/public/index.html text eol=lf
+/frontend/public/vender-propiedad-rapido.html text eol=lf
+/frontend/public/vender-propiedad-con-deudas.html text eol=lf
+/frontend/public/vender-propiedad-en-mal-estado.html text eol=lf
+/frontend/public/sitemap.xml text eol=lf
