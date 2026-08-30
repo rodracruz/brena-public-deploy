@@ -6,6 +6,7 @@ const fs = require("node:fs");
 
 const { PAGES } = require("../src/public-pages/catalog");
 const { renderPage } = require("../src/public-pages/render");
+const { SITE_IDENTITY } = require("../src/public-pages/site-identity");
 const { findAll, parseHtml, textContent } = require("./helpers/html-tree");
 
 function nodesByType(root, type) {
@@ -21,9 +22,54 @@ function propertyNodes(node, property) {
   return findAll(node, (candidate) => candidate.attrs?.itemprop === property);
 }
 
-test("site identity exposes only approved immutable public fields", () => {
-  const { SITE_IDENTITY } = require("../src/public-pages/site-identity");
+function ownedItemPropertyNodes(node) {
+  const matches = [];
+  const visit = (candidate) => {
+    if (typeof candidate.attrs?.itemprop === "string") matches.push(candidate);
+    if (candidate !== node && Object.hasOwn(candidate.attrs || {}, "itemscope")) return;
+    for (const child of candidate.children || []) visit(child);
+  };
+  for (const child of node.children || []) visit(child);
+  return matches;
+}
 
+function ownedPropertyNodes(node, property) {
+  return ownedItemPropertyNodes(node).filter((candidate) => candidate.attrs.itemprop === property);
+}
+
+function assertHomepageEntityContract(html) {
+  const root = parseHtml(html);
+  const websites = nodesByType(root, "WebSite");
+  const organizations = nodesByType(root, "Organization");
+  assert.equal(websites.length, 1, "WebSite cardinality must be exact");
+  assert.equal(organizations.length, 1, "Organization cardinality must be exact");
+
+  const website = websites[0];
+  const organization = organizations[0];
+  assert.equal(website.attrs.itemid, SITE_IDENTITY.websiteId, "WebSite id must be exact");
+  assert.deepEqual(
+    ownedItemPropertyNodes(website).map((node) => node.attrs.itemprop).sort(),
+    ["name", "publisher", "url"],
+    "WebSite properties must be exact and unique",
+  );
+  assert.equal(ownedPropertyNodes(website, "name")[0].attrs.content, SITE_IDENTITY.name, "WebSite name must be exact");
+  assert.equal(ownedPropertyNodes(website, "url")[0].attrs.href, SITE_IDENTITY.siteUrl, "WebSite url must be exact");
+  assert.equal(ownedPropertyNodes(website, "publisher")[0], organization, "WebSite publisher must be the Organization node");
+
+  assert.equal(organization.attrs.itemid, SITE_IDENTITY.organizationId, "Organization id must be exact");
+  assert.equal(organization.attrs.itemprop, "publisher", "Organization must belong to WebSite as publisher");
+  assert.deepEqual(
+    ownedItemPropertyNodes(organization).map((node) => node.attrs.itemprop).sort(),
+    ["description", "logo", "name", "url"],
+    "Organization properties must be exact and unique",
+  );
+  assert.equal(textContent(ownedPropertyNodes(organization, "name")[0]), SITE_IDENTITY.name, "Organization name must be exact");
+  assert.equal(ownedPropertyNodes(organization, "url")[0].attrs.href, SITE_IDENTITY.siteUrl, "Organization url must be exact");
+  assert.equal(ownedPropertyNodes(organization, "logo")[0].attrs.href, SITE_IDENTITY.logoUrl, "Organization logo must be exact");
+  assert.equal(textContent(ownedPropertyNodes(organization, "description")[0]), SITE_IDENTITY.description, "Organization description must be exact");
+}
+
+test("site identity exposes only approved immutable public fields", () => {
   assert.deepEqual(Object.keys(SITE_IDENTITY), [
     "name",
     "siteUrl",
@@ -45,7 +91,9 @@ test("site identity exposes only approved immutable public fields", () => {
 });
 
 test("homepage exposes one WebSite and one minimal visible Organization", () => {
-  const root = parseHtml(renderPage(PAGES[0]));
+  const html = renderPage(PAGES[0]);
+  assertHomepageEntityContract(html);
+  const root = parseHtml(html);
   const websites = nodesByType(root, "WebSite");
   const organizations = nodesByType(root, "Organization");
 
@@ -61,6 +109,24 @@ test("homepage exposes one WebSite and one minimal visible Organization", () => 
     "url",
   ]);
   assert.match(textContent(organizations[0]), /BRENA evalúa propiedades complejas/);
+});
+
+test("homepage entity contract rejects missing, altered and duplicated properties", () => {
+  const html = renderPage(PAGES[0]);
+
+  assert.doesNotThrow(() => assertHomepageEntityContract(html));
+  assert.throws(
+    () => assertHomepageEntityContract(html.replace(/\s*<meta itemprop="name" content="BRENA">/, "")),
+    /WebSite (?:properties|name)/,
+  );
+  assert.throws(
+    () => assertHomepageEntityContract(html.replace("https://brena.cl/brena.png", "https://brena.cl/otro-logo.png")),
+    /Organization logo/,
+  );
+  assert.throws(
+    () => assertHomepageEntityContract(html.replace('<link itemprop="logo" href="https://brena.cl/brena.png">', '<link itemprop="logo" href="https://brena.cl/brena.png"><link itemprop="logo" href="https://brena.cl/brena.png">')),
+    /Organization (?:properties|logo)/,
+  );
 });
 
 test("interior and success pages do not duplicate the site entity", () => {

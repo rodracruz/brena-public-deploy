@@ -1,7 +1,13 @@
 # BRENA-WEB-SEO-007 — Entidad y confianza
 
-Fecha: 2026-08-29  
-Base productiva: `adf8f23478e9e8017a03c33185a0f77b4c17dbc7`  
+Fecha: 2026-08-29
+
+Base productiva: `adf8f23478e9e8017a03c33185a0f77b4c17dbc7`
+
+Base de implementación después del gate de portabilidad: `c291887863bb452029135b06fe938fd851c9bed7`
+
+HEAD sometido a revisión independiente: `c86bd2a5a670e26be6f9292159deb9328af64e9f`
+
 Rama: `codex/brena-web-seo-007-entity-trust`
 
 ## Objetivo y alcance
@@ -63,6 +69,14 @@ Los contratos añadidos comprueban:
 - copy institucional dentro de los límites aprobados;
 - normalización de señales compartidas de marca;
 - build determinista y artefactos sincronizados.
+
+Trazabilidad TDD:
+
+- RED: catálogo sin identidad central ni etiquetas de breadcrumb; renderer sin `WebSite`, `Organization` ni `BreadcrumbList`; copy y señales de marca heredadas; contrato exacto de propiedades sin validador de mutaciones.
+- GREEN focal: contratos de catálogo, renderer, contenido y entidad aprobados después de cada cambio mínimo.
+- GREEN final previo a revisión: `npm run build` PASS y `npm test` **119/119 PASS**.
+- Seguridad de dependencias: `npm audit --audit-level=low` **0 vulnerabilidades**.
+- Revisión independiente inicial: 0 Critical, 1 Important y 2 Minor. El Important se resolvió con un test de mutación que exige cardinalidad, pertenencia al scope y valores exactos de cada propiedad de `WebSite` y `Organization`. Los Minor se resolvieron eliminando whitespace final y completando esta trazabilidad.
 
 La revisión local en navegador cubrió las cuatro rutas a 1440×900 y 390×844. No se observó overflow horizontal ni errores o advertencias de consola; header, CTA, breadcrumb, formulario y footer conservaron el sistema visual vigente.
 
