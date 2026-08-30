@@ -99,3 +99,20 @@ test("each P1 page exposes one visible two-item BreadcrumbList", () => {
   const success = parseHtml(fs.readFileSync("frontend/public/success.html", "utf8"));
   assert.equal(nodesByType(success, "BreadcrumbList").length, 0);
 });
+
+test("generated pages exclude unapproved schema types and identity properties", () => {
+  const forbiddenTypes = ["LocalBusiness", "FAQPage", "Service", "Review", "AggregateRating", "Person"];
+  const forbiddenProperties = [
+    "legalName", "taxID", "address", "telephone", "email", "contactPoint",
+    "openingHours", "sameAs", "founder", "employee", "foundingDate",
+    "aggregateRating", "review", "areaServed",
+  ];
+
+  for (const page of PAGES) {
+    const root = parseHtml(renderPage(page));
+    for (const type of forbiddenTypes) assert.equal(nodesByType(root, type).length, 0, `${page.route}: ${type}`);
+    for (const property of forbiddenProperties) {
+      assert.equal(propertyNodes(root, property).length, 0, `${page.route}: ${property}`);
+    }
+  }
+});
