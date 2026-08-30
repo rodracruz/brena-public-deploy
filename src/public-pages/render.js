@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { PAGE_TYPES, PAGES, validateCatalog } = require("./catalog");
+const { SITE_IDENTITY } = require("./site-identity");
 
 const FORM_SOURCE = fs.readFileSync(path.join(__dirname, "fragments", "lead-form.html"), "utf8").trim();
 
@@ -35,6 +36,7 @@ function renderHead(page) {
   <link rel="canonical" href="${escapeHtml(page.canonical)}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_CL">
+  <meta property="og:site_name" content="${escapeHtml(SITE_IDENTITY.name)}">
   <meta property="og:title" content="${escapeHtml(page.ogTitle)}">
   <meta property="og:description" content="${escapeHtml(page.ogDescription)}">
   <meta property="og:url" content="${escapeHtml(page.canonical)}">
@@ -96,7 +98,7 @@ function renderHomepageBody() {
     </div></div>
   </section>
   <section class="process section" id="proceso" aria-labelledby="process-title"><div class="shell process-grid"><div class="process-intro" data-reveal><p class="eyebrow eyebrow-light"><span></span> Un proceso sin letra chica</p><h2 id="process-title">Claridad antes de cualquier decisión.</h2><p>No todas las propiedades ni todas las situaciones son iguales. Por eso no hacemos promesas antes de revisar los antecedentes básicos.</p><a class="button button-light" href="#conversemos" data-analytics-cta-id="process_form" data-analytics-cta-location="process">Empezar una conversación</a></div><ol class="steps" data-reveal><li><span class="step-number">01</span><div><h3>Nos cuentas qué está pasando</h3><p>Pedimos información básica sobre la propiedad, tu objetivo y el nivel de urgencia.</p></div></li><li><span class="step-number">02</span><div><h3>Revisamos el caso</h3><p>Ordenamos la información y determinamos qué antecedentes hacen falta.</p></div></li><li><span class="step-number">03</span><div><h3>Te damos una respuesta clara</h3><p>Explicamos si podemos ayudar, qué camino vemos y cuáles serían los próximos pasos.</p></div></li></ol></div></section>
-  <section class="perspective section" aria-labelledby="perspective-title"><div class="shell perspective-grid"><div class="perspective-image" data-reveal><img src="/casa2.jpg" width="640" height="853" alt="Vista exterior de una vivienda contemporánea" loading="lazy"></div><div class="perspective-copy" data-reveal><p class="eyebrow"><span></span> Una mirada completa</p><h2 id="perspective-title">Una propiedad es más que un precio de publicación.</h2><p class="large-copy" data-page-editorial>También son obligaciones, costos mensuales, estado físico, tiempo disponible y las decisiones de las personas que están detrás.</p><p>BRENA recibe solicitudes de propiedades en distintas regiones de Chile. Cada caso se evalúa individualmente y la viabilidad de intervención se confirma según ubicación, características de la propiedad y alternativa requerida.</p></div></div></section>`;
+  <section class="perspective section" aria-labelledby="perspective-title" itemprop="publisher" itemscope itemtype="https://schema.org/Organization" itemid="${escapeHtml(SITE_IDENTITY.organizationId)}"><link itemprop="url" href="${escapeHtml(SITE_IDENTITY.siteUrl)}"><link itemprop="logo" href="${escapeHtml(SITE_IDENTITY.logoUrl)}"><div class="shell perspective-grid"><div class="perspective-image" data-reveal><img src="/casa2.jpg" width="640" height="853" alt="Vista exterior de una vivienda contemporánea" loading="lazy"></div><div class="perspective-copy" data-reveal><p class="eyebrow"><span></span> <span itemprop="name">${escapeHtml(SITE_IDENTITY.name)}</span></p><h2 id="perspective-title">Una propiedad es más que un precio de publicación.</h2><p class="large-copy" data-page-editorial itemprop="description">${escapeHtml(SITE_IDENTITY.description)}</p><p>BRENA recibe solicitudes de propiedades en distintas regiones de Chile. Cada caso se evalúa individualmente y la viabilidad de intervención se confirma según ubicación, características de la propiedad y alternativa requerida.</p></div></div></section>`;
 }
 
 function renderCommercialBody(page) {
@@ -131,7 +133,9 @@ function renderPage(page, pages = PAGES) {
   return `<!doctype html>
 <html lang="es-CL" data-page-type="${page.pageType}">
 ${renderHead(page)}
-<body>
+<body${page.route === "/" ? ` itemscope itemtype="https://schema.org/WebSite" itemid="${escapeHtml(SITE_IDENTITY.websiteId)}"` : ""}>
+  ${page.route === "/" ? `<link itemprop="url" href="${escapeHtml(SITE_IDENTITY.siteUrl)}">
+  <meta itemprop="name" content="${escapeHtml(SITE_IDENTITY.name)}">` : ""}
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   ${renderHeader(page)}
   <main id="contenido">${renderHero(page)}${page.route === "/" ? renderHomepageBody() : renderCommercialBody(page)}${renderFaq(page)}${renderContact(page)}</main>
