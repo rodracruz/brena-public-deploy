@@ -50,6 +50,8 @@ test("homepage situations 01, 02 and 05 open their thematic contact sections", (
     const card = home.match(new RegExp(`<article class="situation-card[^>]*><span class="card-number">${number}</span>[\\s\\S]*?</article>`));
     assert.ok(card, `situation ${number}`);
     assert.match(card[0], new RegExp(`<a href="${target}"[^>]*>Quiero conversar</a>`), `${number} -> ${target}`);
+    const thematicCta = card[0].match(new RegExp(`<a href="${target}"[^>]*>Quiero conversar</a>`))[0];
+    assert.doesNotMatch(thematicCta, /data-select-situation=/, `${number} must use native cross-page navigation`);
   }
 });
 
