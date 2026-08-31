@@ -65,34 +65,72 @@ test("homepage preserves the established six situations, six FAQs and footer nav
   for (const target of ["#situaciones", "#proceso", "#preguntas", "#privacidad"]) assert.match(home, new RegExp(`href="${target}"`));
 });
 
-test("homepage trust section states only the approved identity and limits", () => {
+test("homepage renders the owner-approved copy from the local reference", () => {
   const home = artifacts.get("index.html");
   for (const statement of [
-    "Evaluación inmobiliaria con una mirada económica y constructiva.",
-    "BRENA evalúa propiedades complejas y estructura alternativas según las condiciones de cada caso.",
-    "experiencia directa en construcción, mejoramiento y remodelación",
-    "puede coordinar una visita presencial a la propiedad",
-    "recibe solicitudes desde distintas regiones de Chile",
-    "no garantiza compra, venta, precio, plazo ni valorización",
+    "Conversación confidencial",
+    "Respuesta clara",
+    "Cuando una propiedad empieza a acumular costos, trámites o incertidumbre, necesitas entender tus alternativas antes de tomar una decisión.",
+    "El dividendo o las obligaciones asociadas a la propiedad se volvieron difíciles de sostener.",
+    "Propiedad desocupada",
+    "La casa o departamento está vacío, deteriorándose o generando gastos todos los meses.",
+    "Tu prioridad es tener una evaluación realista y avanzar sin meses de incertidumbre.",
+    "Solo pedimos información básica para entender la propiedad, tu objetivo y el nivel de urgencia.",
+    "El equipo Brena ordena la información y determina qué antecedentes hacen falta para evaluar alternativas reales.",
+    "Te explicamos si podemos ayudarte, qué camino vemos y cuáles serían los próximos pasos. Tú decides si avanzar.",
+    "Una mirada completa",
+    "Una propiedad es más que un precio de publicación.",
+    "También son deudas, costos mensuales, estado legal, tiempo disponible y las decisiones de las personas que están detrás.",
+    "En Brena reunimos esos factores para comprender el caso completo. La primera conversación no te obliga a vender ni reemplaza asesoría legal o financiera independiente: te permite saber si existe un camino que valga la pena evaluar.",
+    "Sin juicios",
+    "Escuchamos la situación tal como es.",
+    "Sin presión",
+    "Tú decides si quieres continuar.",
+    "Sin falsas certezas",
+    "Evaluamos antes de prometer.",
+    "Si tu pregunta no aparece aquí, puedes incluirla en el formulario. Revisaremos el contexto antes de responder.",
+    "Brena Gestión Inmobiliaria.",
   ]) {
     assert.equal(home.toLocaleLowerCase("es-CL").includes(statement.toLocaleLowerCase("es-CL")), true, statement);
   }
 
+  for (const route of [
+    "/vender-propiedad-rapido",
+    "/vender-propiedad-con-deudas",
+    "/vender-propiedad-en-mal-estado",
+  ]) assert.match(home, new RegExp(`href="${route}"`), route);
+
+  assert.equal((home.match(/class="principles"/g) || []).length, 1);
+  assert.equal((home.match(/<div><span>0[1-3]<\/span><strong>/g) || []).length, 3);
+  assert.match(home, /<div class="image-caption"><span>Brena<\/span> Gestión inmobiliaria<\/div>/);
+  assert.match(home, /<h3>Gracias por confiar en Brena\.<\/h3>/);
+  assert.match(home, /<strong>Responsable:<\/strong> Brena Gestión Inmobiliaria\./);
+  assert.match(home, /© <span data-current-year>2026<\/span> Brena Gestión Inmobiliaria\./);
+
   for (const prohibited of [
     /\bRUT\b|razón social|años de experiencia|certificad[oa]|testimonio/i,
     /mailto:|href="tel:|whatsapp/i,
+    /Evaluación caso a caso|Sin promesas previas/i,
+    /Evaluación inmobiliaria con una mirada económica y constructiva/i,
+    /BRENA evalúa cada propiedad y, según sus condiciones/i,
   ]) assert.doesNotMatch(home, prohibited);
 });
 
-test("all pages use BRENA for canonical shared brand signals", () => {
+test("all pages preserve BRENA machine identity while homepage uses the local visible brand copy", () => {
   for (const page of PAGES) {
     const html = artifacts.get(page.outputFile);
     assert.match(html, /<meta property="og:site_name" content="BRENA">/);
     assert.match(html, /aria-label="BRENA, inicio"/);
     assert.equal((html.match(/alt="BRENA"/g) || []).length, 2);
-    assert.match(html, /<h3>Gracias por confiar en BRENA\.<\/h3>/);
-    assert.match(html, /<strong>Responsable:<\/strong> BRENA\./);
-    assert.match(html, /© <span data-current-year>2026<\/span> BRENA\./);
+    if (page.route === "/") {
+      assert.match(html, /<h3>Gracias por confiar en Brena\.<\/h3>/);
+      assert.match(html, /<strong>Responsable:<\/strong> Brena Gestión Inmobiliaria\./);
+      assert.match(html, /© <span data-current-year>2026<\/span> Brena Gestión Inmobiliaria\./);
+    } else {
+      assert.match(html, /<h3>Gracias por confiar en BRENA\.<\/h3>/);
+      assert.match(html, /<strong>Responsable:<\/strong> BRENA\./);
+      assert.match(html, /© <span data-current-year>2026<\/span> BRENA\./);
+    }
   }
 });
 

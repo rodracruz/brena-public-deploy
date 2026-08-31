@@ -37,6 +37,10 @@ function ownedPropertyNodes(node, property) {
   return ownedItemPropertyNodes(node).filter((candidate) => candidate.attrs.itemprop === property);
 }
 
+function propertyValue(node) {
+  return node.attrs.content ?? textContent(node);
+}
+
 function assertHomepageEntityContract(html) {
   const root = parseHtml(html);
   const websites = nodesByType(root, "WebSite");
@@ -63,10 +67,10 @@ function assertHomepageEntityContract(html) {
     ["description", "logo", "name", "url"],
     "Organization properties must be exact and unique",
   );
-  assert.equal(textContent(ownedPropertyNodes(organization, "name")[0]), SITE_IDENTITY.name, "Organization name must be exact");
+  assert.equal(propertyValue(ownedPropertyNodes(organization, "name")[0]), SITE_IDENTITY.name, "Organization name must be exact");
   assert.equal(ownedPropertyNodes(organization, "url")[0].attrs.href, SITE_IDENTITY.siteUrl, "Organization url must be exact");
   assert.equal(ownedPropertyNodes(organization, "logo")[0].attrs.href, SITE_IDENTITY.logoUrl, "Organization logo must be exact");
-  assert.equal(textContent(ownedPropertyNodes(organization, "description")[0]), SITE_IDENTITY.description, "Organization description must be exact");
+  assert.equal(propertyValue(ownedPropertyNodes(organization, "description")[0]), SITE_IDENTITY.description, "Organization description must be exact");
 }
 
 test("site identity exposes only approved immutable public fields", () => {
@@ -93,6 +97,8 @@ test("site identity exposes only approved immutable public fields", () => {
 test("homepage exposes one WebSite and one minimal visible Organization", () => {
   const html = renderPage(PAGES[0]);
   assertHomepageEntityContract(html);
+  assert.match(html, /<meta itemprop="name" content="BRENA">/);
+  assert.match(html, /<meta itemprop="description" content="BRENA evalúa propiedades complejas y estructura alternativas según las condiciones de cada caso\.">/);
   const root = parseHtml(html);
   const websites = nodesByType(root, "WebSite");
   const organizations = nodesByType(root, "Organization");
@@ -108,7 +114,7 @@ test("homepage exposes one WebSite and one minimal visible Organization", () => 
     "name",
     "url",
   ]);
-  assert.match(textContent(organizations[0]), /BRENA evalúa propiedades complejas/);
+  assert.match(textContent(organizations[0]), /Una propiedad es más que un precio de publicación/);
 });
 
 test("homepage entity contract rejects missing, altered and duplicated properties", () => {
