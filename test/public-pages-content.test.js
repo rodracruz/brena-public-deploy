@@ -38,6 +38,21 @@ test("homepage and commercial pages have the approved bidirectional link graph",
   }
 });
 
+test("homepage situations 01, 02 and 05 open their thematic contact sections", () => {
+  const home = artifacts.get("index.html");
+  const expectedTargets = [
+    ["01", "/vender-propiedad-con-deudas#conversemos"],
+    ["02", "/vender-propiedad-en-mal-estado#conversemos"],
+    ["05", "/vender-propiedad-rapido#conversemos"],
+  ];
+
+  for (const [number, target] of expectedTargets) {
+    const card = home.match(new RegExp(`<article class="situation-card[^>]*><span class="card-number">${number}</span>[\\s\\S]*?</article>`));
+    assert.ok(card, `situation ${number}`);
+    assert.match(card[0], new RegExp(`<a href="${target}"[^>]*>Quiero conversar</a>`), `${number} -> ${target}`);
+  }
+});
+
 test("form contract and contextual hints remain exact across all surfaces", () => {
   const expectedNames = ["situation", "propertyType", "region", "commune", "urgency", "name", "phone", "email", "message", "website", "consent"];
   for (const page of PAGES) {
