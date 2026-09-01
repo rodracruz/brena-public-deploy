@@ -206,4 +206,13 @@ test("brand artwork uses cropped responsive frames so the tagline remains legibl
   for (const declaration of [/width:\s*175px/, /height:\s*66px/]) assert.match(rule(css.slice(mobileStart, compactStart), ".brand"), declaration);
   for (const declaration of [/width:\s*165px/, /height:\s*62px/]) assert.match(rule(css.slice(compactStart, tinyStart), ".brand"), declaration);
   for (const declaration of [/width:\s*145px/, /height:\s*56px/]) assert.match(rule(css.slice(tinyStart, reducedMotionStart), ".brand"), declaration);
+
+  const stylesheetConsumers = [
+    path.join(__dirname, "..", "src", "public-pages", "render.js"),
+    ...["index.html", "vender-propiedad-rapido.html", "vender-propiedad-con-deudas.html", "vender-propiedad-en-mal-estado.html", "success.html"]
+      .map((file) => path.join(__dirname, "..", "frontend", "public", file)),
+  ];
+  for (const consumer of stylesheetConsumers) {
+    assert.match(fs.readFileSync(consumer, "utf8"), /\/styles\.css\?v=3\.0\.1/, consumer);
+  }
 });
