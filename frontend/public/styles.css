@@ -259,19 +259,27 @@ h3 {
   display: grid;
   min-height: 82px;
   align-items: center;
-  grid-template-columns: 180px 1fr auto;
+  grid-template-columns: 220px 1fr auto;
   gap: 32px;
 }
 
 .brand {
   display: inline-block;
-  width: 146px;
+  width: 210px;
+  height: 78px;
+  overflow: hidden;
 }
 
-.brand img,
-.site-footer img {
+.brand img {
+  display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  mix-blend-mode: multiply;
+}
+
+.site-footer img {
   mix-blend-mode: multiply;
 }
 
@@ -1171,7 +1179,11 @@ textarea:focus {
 }
 
 .footer-top img {
-  width: 150px;
+  display: block;
+  width: 220px;
+  height: 84px;
+  object-fit: cover;
+  object-position: center;
   margin-bottom: 20px;
 }
 
@@ -1454,7 +1466,8 @@ textarea:focus {
   }
 
   .brand {
-    width: 120px;
+    width: 175px;
+    height: 66px;
   }
 
   .header-inner .button {
@@ -1614,8 +1627,18 @@ textarea:focus {
 }
 
 @media (max-width: 410px) {
+  .header-inner {
+    gap: 8px;
+  }
+
+  .brand {
+    width: 165px;
+    height: 62px;
+  }
+
   .header-inner .button {
-    padding-inline: 10px;
+    padding-inline: 8px;
+    font-size: 0.68rem;
   }
 
   .header-inner .button span {
@@ -1636,6 +1659,13 @@ textarea:focus {
 
   .trust-list {
     display: grid;
+  }
+}
+
+@media (max-width: 340px) {
+  .brand {
+    width: 145px;
+    height: 56px;
   }
 }
 

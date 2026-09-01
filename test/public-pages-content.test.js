@@ -179,3 +179,31 @@ test("shared stylesheet provides interior-page, hint, focus and responsive rules
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test("brand artwork uses cropped responsive frames so the tagline remains legible", () => {
+  const css = fs.readFileSync(path.join(__dirname, "..", "frontend", "public", "styles.css"), "utf8");
+  const rule = (source, selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = source.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
+    assert.ok(match, selector);
+    return match[1];
+  };
+
+  const headerGrid = rule(css, ".header-inner");
+  const brand = rule(css, ".brand");
+  const brandImage = rule(css, ".brand img");
+  const footerImage = rule(css, ".footer-top img");
+  for (const declaration of [/grid-template-columns:\s*220px 1fr auto/, /min-height:\s*82px/]) assert.match(headerGrid, declaration);
+  for (const declaration of [/width:\s*210px/, /height:\s*78px/, /overflow:\s*hidden/]) assert.match(brand, declaration);
+  for (const declaration of [/width:\s*100%/, /height:\s*100%/, /object-fit:\s*cover/, /object-position:\s*center/]) assert.match(brandImage, declaration);
+  for (const declaration of [/width:\s*220px/, /height:\s*84px/, /object-fit:\s*cover/, /object-position:\s*center/]) assert.match(footerImage, declaration);
+
+  const mobileStart = css.indexOf("@media (max-width: 760px)");
+  const compactStart = css.indexOf("@media (max-width: 410px)");
+  const tinyStart = css.indexOf("@media (max-width: 340px)");
+  const reducedMotionStart = css.indexOf("@media (prefers-reduced-motion: reduce)");
+  assert.ok(mobileStart >= 0 && compactStart > mobileStart && tinyStart > compactStart && reducedMotionStart > tinyStart);
+  for (const declaration of [/width:\s*175px/, /height:\s*66px/]) assert.match(rule(css.slice(mobileStart, compactStart), ".brand"), declaration);
+  for (const declaration of [/width:\s*165px/, /height:\s*62px/]) assert.match(rule(css.slice(compactStart, tinyStart), ".brand"), declaration);
+  for (const declaration of [/width:\s*145px/, /height:\s*56px/]) assert.match(rule(css.slice(tinyStart, reducedMotionStart), ".brand"), declaration);
+});
