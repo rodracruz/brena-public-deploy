@@ -38,6 +38,21 @@ test("renderer builds exactly four indexable pages and the sitemap", () => {
   }
 });
 
+test("homepage emphasizes only solución while preserving the complete heading text", () => {
+  const artifacts = buildArtifacts(PAGES);
+  const homepageHeading = artifacts.get("index.html").match(/<h1 id="hero-title">([\s\S]*?)<\/h1>/);
+  assert.ok(homepageHeading);
+  assert.equal(homepageHeading[1].replace(/<[^>]+>/g, ""), "Tu propiedad puede volver a ser una solución.");
+  assert.equal((homepageHeading[1].match(/<em>/g) || []).length, 1);
+  assert.match(homepageHeading[1], /una <em>solución\.<\/em>$/);
+
+  for (const page of PAGES.slice(1)) {
+    const heading = artifacts.get(page.outputFile).match(/<h1 id="hero-title">([\s\S]*?)<\/h1>/);
+    assert.ok(heading, page.route);
+    assert.doesNotMatch(heading[1], /<em>/, page.route);
+  }
+});
+
 test("lead form is rendered from one source and hints never select an option", () => {
   const base = renderLeadForm({ relatedSituation: null });
   const fast = renderLeadForm({ relatedSituation: "necesita_vender_rapido" });

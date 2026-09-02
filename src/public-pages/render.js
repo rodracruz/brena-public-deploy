@@ -75,6 +75,10 @@ function renderBreadcrumb(page) {
 
 function renderHero(page) {
   const home = page.route === "/";
+  const emphasizedEnding = "solución.";
+  const heading = home && page.h1.endsWith(emphasizedEnding)
+    ? `${escapeHtml(page.h1.slice(0, -emphasizedEnding.length))}<em>${escapeHtml(emphasizedEnding)}</em>`
+    : escapeHtml(page.h1);
   const trustItems = home
     ? ["Conversación confidencial", "Sin obligación", "Respuesta clara"]
     : ["Evaluación caso a caso", "Sin obligación", "Sin promesas previas"];
@@ -83,7 +87,7 @@ function renderHero(page) {
       <div class="hero-copy" data-reveal>
         ${renderBreadcrumb(page)}
         <p class="eyebrow"><span></span> ${escapeHtml(page.eyebrow)}</p>
-        <h1 id="hero-title">${escapeHtml(page.h1)}</h1>
+        <h1 id="hero-title">${heading}</h1>
         <p class="hero-lead">${escapeHtml(page.lead)}</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#conversemos" data-analytics-cta-id="hero_form" data-analytics-cta-location="hero">Cuéntanos tu caso <span aria-hidden="true">↗</span></a>
