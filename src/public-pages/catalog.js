@@ -14,7 +14,7 @@ const PAGES = [
     route: "/", outputFile: "index.html", pageType: "homepage", cluster: "BR-01", breadcrumbLabel: null,
     title: "Brena | Soluciones para propiedades complejas",
     description: "¿Tienes una propiedad con deudas, desocupada, heredada o que necesitas vender pronto? Cuéntanos tu caso y descubre si Brena puede ayudarte.",
-    h1: "Tu propiedad puede volver a ser una solución.", canonical: "https://brena.cl/",
+    h1: "Tu propiedad puede ser tu solución.", canonical: "https://brena.cl/",
     ogTitle: "Brena — Tu propiedad puede volver a ser una solución",
     ogDescription: "Revisamos propiedades con situaciones complejas de forma clara, confidencial y sin compromiso.",
     eyebrow: "Soluciones inmobiliarias con criterio",

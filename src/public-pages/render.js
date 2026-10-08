@@ -77,7 +77,7 @@ function renderHero(page) {
   const home = page.route === "/";
   const emphasizedEnding = "solución.";
   const heading = home && page.h1.endsWith(emphasizedEnding)
-    ? `${escapeHtml(page.h1.slice(0, -emphasizedEnding.length))}<em>${escapeHtml(emphasizedEnding)}</em>`
+    ? `${escapeHtml(page.h1.slice(0, -emphasizedEnding.length).trimEnd())}<br><em>${escapeHtml(emphasizedEnding)}</em>`
     : escapeHtml(page.h1);
   const trustItems = home
     ? ["Conversación confidencial", "Sin obligación", "Respuesta clara"]

@@ -42,9 +42,9 @@ test("homepage emphasizes only solución while preserving the complete heading t
   const artifacts = buildArtifacts(PAGES);
   const homepageHeading = artifacts.get("index.html").match(/<h1 id="hero-title">([\s\S]*?)<\/h1>/);
   assert.ok(homepageHeading);
-  assert.equal(homepageHeading[1].replace(/<[^>]+>/g, ""), "Tu propiedad puede volver a ser una solución.");
+  assert.equal(homepageHeading[1].replace(/<br>/g, " ").replace(/<[^>]+>/g, ""), "Tu propiedad puede ser tu solución.");
   assert.equal((homepageHeading[1].match(/<em>/g) || []).length, 1);
-  assert.match(homepageHeading[1], /una <em>solución\.<\/em>$/);
+  assert.match(homepageHeading[1], /tu<br><em>solución\.<\/em>$/);
 
   for (const page of PAGES.slice(1)) {
     const heading = artifacts.get(page.outputFile).match(/<h1 id="hero-title">([\s\S]*?)<\/h1>/);
