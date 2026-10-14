@@ -1,0 +1,19 @@
+{
+  "name": "QuietCab Lab · Laboratorio acústico portátil",
+  "short_name": "QuietCab Lab",
+  "description": "Analizador acústico y experimentos experimentales con tonos estables",
+  "lang": "es-CL",
+  "start_url": "./QuietCab-Lab-Web-v04.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080e18",
+  "theme_color": "#080e18",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
