@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="es-CL"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080e18"><meta name="description" content="Laboratorio portátil para analizar ruido acústico y experimentar con tonos desde tu teléfono. Sin subir audio."><title>QuietCab Lab · Laboratorio acústico portátil</title>
+<link rel="manifest" href="./manifest.webmanifest"><style>:root{color-scheme:dark;--bg:#080e18;--panel:#111c29;--panel2:#162333;--line:#2b4050;--ink:#edf5f8;--sub:#9eafbb;--aqua:#36d4c0;--aqua2:#13766e;--warn:#ffbe65;--danger:#ff727d;--blue:#4aa9ed;--radius:19px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 20% -8%,#17404b 0%,transparent 42%),var(--bg);font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink);font-size:15px;line-height:1.5}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}a{color:var(--aqua)}.app{max-width:970px;padding:21px 16px 100px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:11px}.mark{width:41px;height:41px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#135c66,#0d3b49);box-shadow:inset 0 0 0 1px #337e80;font-size:25px}.eyebrow{font-size:11px;color:var(--aqua);font-weight:750;letter-spacing:1.2px;text-transform:uppercase}.brand b{font-size:21px;letter-spacing:-.8px}.version{color:var(--sub);font-size:12px;border:1px solid var(--line);padding:5px 9px;border-radius:20px}h1{font-size:clamp(27px,5vw,43px);line-height:1.09;letter-spacing:-1.4px;margin:29px 0 12px}h2{font-size:19px;letter-spacing:-.3px;margin:0 0 13px}h3{font-size:16px;margin:0 0 10px}.lead{font-size:15px;color:var(--sub);max-width:710px;margin:0 0 20px}.tagline{color:var(--aqua)}.banner{padding:13px 15px;margin:15px 0 19px;border:1px solid #655437;background:#33291990;color:#ffdfa9;border-radius:13px;font-size:13px}.banner strong{color:#fff4db}.banner[hidden]{display:none}.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:15px}.panel{background:linear-gradient(145deg,#142333,#101b28);border:1px solid #293c4d;border-radius:var(--radius);padding:18px;box-shadow:0 12px 25px #0002;min-width:0}.full{grid-column:1/-1}.muted{color:var(--sub)}.small{font-size:12px;color:var(--sub)}.tiny{font-size:11px;color:var(--sub)}.pill{display:inline-flex;align-items:center;gap:6px;background:#1a303c;border:1px solid #2f5059;border-radius:30px;color:#80d7cc;padding:4px 10px;font-size:12px;font-weight:650}.pill.off{background:#2a2827;border-color:#4f4338;color:#e2b98d}.pill.live{background:#123f3a;color:#81f6e5}.tabs{display:flex;gap:7px;margin:22px 0 15px;padding:5px;border-radius:15px;background:#14212e;border:1px solid var(--line)}.tabs button{flex:1;border:0;background:transparent;color:var(--sub);padding:11px 6px;border-radius:10px;font-size:14px;font-weight:650}.tabs button[aria-selected=true]{background:#295164;color:white;box-shadow:0 2px 12px #0003}.section[hidden]{display:none}label{display:block;font-weight:650;font-size:13px;margin:10px 0 7px}select,input[type=number]{background:#0c1723;border:1px solid #395267;color:var(--ink);border-radius:10px;padding:11px;width:100%;min-height:44px}input[type=range]{accent-color:var(--aqua);width:100%;min-height:36px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.control{margin:14px 0}.check{display:flex;gap:11px;align-items:flex-start;line-height:1.5;font-weight:450;color:#d5e3ec}.check input{margin-top:4px;accent-color:var(--aqua);width:19px;height:19px;flex-shrink:0}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.btn{border:1px solid #376a73;background:#1a6e71;color:#fff;border-radius:12px;padding:11px 15px;min-height:46px;font-weight:740}.btn.main{background:linear-gradient(120deg,#2bc2ae,#1f9b9f);border:0;color:#031b22}.btn.secondary{background:#213446;border-color:#38536b}.btn.outline{background:transparent;border:1px solid #415765;color:#d8e6ec}.btn.danger{background:#7a202c;border:1px solid #db5d6b}.metricwrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{background:#0e1b2a;border:1px solid #23384a;padding:13px;border-radius:12px;min-width:0}.metric .value{font-size:clamp(20px,3vw,32px);font-weight:760;color:#effbff;letter-spacing:-.7px;font-variant-numeric:tabular-nums}.metric .unit{font-size:12px;color:#a5c0ce}.metric .label{font-size:12px;color:#97acb9}.status{font-size:13px;white-space:pre-line;color:#bad1df;margin:12px 0 0}.status.good{color:var(--aqua)}.status.bad{color:var(--danger)}.status.warn{color:var(--warn)}.chart{background:#091521;border:1px solid #263c4e;width:100%;height:220px;display:block;border-radius:14px}.legend{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:var(--sub);margin-top:7px}.band-list{display:grid;grid-template-columns:1fr;gap:9px}.band{display:grid;grid-template-columns:90px 1fr 54px;align-items:center;gap:10px;font-size:12px;color:var(--sub)}.track{height:8px;background:#223846;border-radius:10px;overflow:hidden}.track>div{height:100%;background:linear-gradient(90deg,#24968d,#56d9c4);border-radius:10px;transition:width .2s}.value-right{text-align:right;color:#cde0e9;font-variant-numeric:tabular-nums}.range-header{display:flex;justify-content:space-between;align-items:center}.range-header output{color:var(--aqua);font-weight:800}.warning{color:#f6cf91}.section p{margin:8px 0}.line{border-top:1px solid #314354;margin:15px 0}.result{padding:15px;background:#0c202c;border:1px solid #255063;border-radius:12px;white-space:pre-wrap;font-variant-numeric:tabular-nums}.stop-dock{position:fixed;z-index:15;bottom:0;left:0;right:0;background:#09121af2;border-top:1px solid #405263;padding:11px max(14px,calc((100vw - 970px)/2 + 15px));display:none;gap:10px;align-items:center;justify-content:space-between;backdrop-filter:blur(16px)}.stop-dock.active{display:flex}.stop-dock b{font-size:13px;color:var(--danger)}.stop-dock button{min-width:160px;min-height:51px;font-size:16px}.footer{margin-top:30px;color:#7f96a5;font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:8px;background:var(--aqua)}.dot.off{background:#a4a4a4}.dot.play{background:var(--danger);box-shadow:0 0 13px var(--danger)}.toast{position:fixed;bottom:89px;left:50%;transform:translateX(-50%);background:#15303c;border:1px solid #3d7e80;padding:10px 15px;border-radius:10px;max-width:min(92vw,440px);box-shadow:0 10px 30px #0006;z-index:25}.toast[hidden]{display:none}.install{display:none}.install.active{display:inline-flex}.candidate-card{margin-top:13px;border:1px solid #2c716e;background:#0b2931;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:5px}.candidate-card strong{font-size:22px;color:var(--aqua)}.candidate-card .btn{align-self:flex-start;margin-top:6px}.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.range-entry{max-width:110px;padding:7px;min-height:35px}.broadbox{padding:13px;border-radius:12px;background:#25312e;border:1px solid #475947;color:#d7e9df;font-size:13px}.copy{color:#c6d3db}
+@media(max-width:700px){.app{padding:16px 13px 95px}.layout{grid-template-columns:1fr}.panel{padding:15px}.full{grid-column:auto}.metric .value{font-size:23px}.metricwrap{gap:7px}.metric{padding:10px}.brand b{font-size:19px}.fields{grid-template-columns:1fr}.tabs button{font-size:13px}.stop-dock button{min-width:120px}.chart{height:195px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style></head>
+<body><main class="app">
+<header class="top"><div class="brand"><div class="mark" aria-hidden="true">≋</div><div><div class="eyebrow">Laboratorio acústico portátil</div><b>QuietCab <span style="color:var(--aqua)">Lab</span></b></div></div><span class="version">v0.4 · Experimental</span></header>
+<h1>Escucha el ruido.<br><span class="tagline">Comprende sus frecuencias.</span></h1>
+<p class="lead">Mide el sonido real en tu dormitorio o cualquier entorno, guarda su perfil y prueba automáticamente una señal para un zumbido estable. <strong>No es un reemplazo de la cancelación de unos audífonos ni elimina ruido blanco general.</strong></p>
+<div class="banner" id="globalWarning"><strong>Antes de probar:</strong> parte con el volumen de reproducción bajo. Un tono mal ajustado puede aumentar el ruido. El botón PARAR detiene la emisión de inmediato; el experimento termina solo tras 30 segundos.</div>
+<div class="panel" style="margin-bottom:14px"><div class="fields"><div><label for="environment">¿Dónde quieres medir?</label><select id="environment"><option value="dormitorio" selected>Dormitorio o vivienda</option><option value="vehiculo">Vehículo</option><option value="industria">Comercio o fábrica</option><option value="libre">Otro ambiente</option></select></div><div><label for="audioRoute">Salida para el tono de prueba</label><select id="audioRoute"><option value="telefono">Parlante del teléfono</option><option value="externo">Parlante externo</option><option value="auto">Audio del vehículo</option><option value="desconocido">No estoy seguro</option></select></div></div><div class="small" id="contextNote" style="margin-top:10px">La medición funciona sin conectar ningún parlante ni realizar experimentos.</div></div>
+<nav class="tabs" role="tablist" aria-label="Funciones"><button type="button" id="tabMeasure" data-tab="measure" role="tab" aria-selected="true">Medición</button><button type="button" id="tabExperiment" data-tab="experiment" role="tab" aria-selected="false">Experimento</button><button type="button" id="tabSession" data-tab="session" role="tab" aria-selected="false">Sesión</button></nav>
+<section class="section" id="measure" role="tabpanel"><div class="layout">
+<div class="panel full"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>Medición ambiental</h2><span class="pill off" id="micBadge"><span class="dot off" id="micDot"></span>Micrófono apagado</span></div>
+<p class="small">Puedes medir ruido tonal, soplidos, ventiladores o ruido de banda ancha en cualquier entorno. No necesitas estar en un automóvil.</p><div class="actions"><button class="btn main" id="startMic">🎙️ Iniciar medición</button><button class="btn outline" id="stopMic" disabled>Detener medición</button></div>
+<div class="status" id="micStatus" role="status">Esperando permiso del micrófono.</div><div class="fields" style="margin-top:8px"><div><label for="inputDevice">Entrada de audio</label><select id="inputDevice"><option value="">Predeterminada del sistema</option></select></div><div><label>Configuración real del navegador</label><div id="actualMic" class="small">No disponible hasta iniciar.</div></div></div></div>
+<div class="panel full"><div class="metricwrap"><div class="metric"><div class="label">Nivel RMS digital</div><div class="value" id="rms">—</div><div class="unit">dBFS · no dB SPL</div></div><div class="metric"><div class="label">Pico espectral</div><div class="value" id="peak">—</div><div class="unit">Hz</div></div><div class="metric"><div class="label">Tipo estimado</div><div class="value" id="noiseKind" style="font-size:15px;padding-top:6px">—</div><div class="unit" id="flatnessLabel">Espectro</div></div></div>
+<div class="candidate-card"><div class="eyebrow">Análisis automático y memoria del ruido</div><div><strong id="candidateValue">—</strong><span class="small"> · detectada con salida apagada</span></div><div id="candidateStatus" class="small">Espera a tener un tono suficientemente estable. El ruido blanco puede no tener una frecuencia única que igualar.</div><button class="btn secondary" id="useDetectedMeasure" disabled>↳ Usar esta frecuencia en el generador</button><div class="actions"><button class="btn main" id="captureProfile">◎ Guardar perfil del ruido · 5 s</button><button class="btn outline" id="deleteProfile">Borrar perfil</button></div><div id="profileStatus" class="small">Aún no hay perfil. Guarda una medición de referencia sin reproducir sonido. Solo se guardan estadísticas, nunca grabaciones de audio.</div></div><h3 style="margin-top:20px">Espectro en vivo</h3><canvas class="chart" id="spectrum" role="img" aria-label="Espectro medido en tiempo real de 30 a 10.000 hertz"></canvas><div class="legend"><span>30 Hz</span><span>100 Hz</span><span>1 kHz</span><span>10 kHz</span></div><div class="status" id="spectrumNote">La gráfica aparecerá al activar el micrófono.</div></div>
+<div class="panel"><h3>Energía por bandas</h3><p class="small">Indicadores relativos del espectro, no mediciones acústicas calibradas.</p><div class="band-list" id="bands"></div></div>
+<div class="panel"><h3>Interpretación</h3><p id="interpretation" class="copy">Cuando midas, la aplicación distinguirá si hay tonos dominantes o un ruido distribuido entre muchas frecuencias.</p><div class="line"></div><div class="small">Los micrófonos de teléfonos pueden aplicar procesamiento acústico aunque se solicite desactivarlo. La lectura se usa para exploración, no certificaciones.</div></div>
+</div></section>
+<section class="section" id="experiment" role="tabpanel" hidden><div class="layout"><div class="panel full" id="automaticPanel"><h2><span style="color:var(--aqua)">✧</span> Modo automático · tono estable</h2><p class="copy">Como una función de cancelación activa, pero <strong>experimental</strong>: primero guarda una referencia del ruido; después la aplicación selecciona frecuencia y ensaya fases sin que tengas que introducir cálculos. La prueba se detiene y valida si realmente disminuye una banda en el micrófono.</p><label class="check"><input type="checkbox" id="autoReadyCheck"><span>Confirmo que la salida está con volumen bajo, puedo detenerla inmediatamente y haré la prueba en un lugar adecuado.</span></label><div class="actions"><button class="btn main" id="oneTap">◎ Analizar y probar automáticamente</button></div><div class="small">Un toque para pedir el micrófono, guardar 5 segundos de ruido ambiental y buscar una prueba de fase si hay un zumbido estable. No genera sonido cuando no se detecta un tono fiable.</div><div class="result" id="autoProfileInfo">No hay perfil guardado todavía. En Medición, pulsa «Guardar perfil del ruido» (5 s).</div><div class="actions"><button id="autoRun" class="btn main" disabled>✧ Buscar ajuste automáticamente</button><button id="autoStop" class="btn danger" disabled>■ Detener automático</button></div><div class="status" id="autoStatus">Disponible solo si hay una componente tonal estable en el ruido medido. Para ruido blanco distribuido no existe una única onda invertida que funcione en toda la habitación.</div><div id="autoResult" class="result" hidden></div><p class="small">El software no puede copiar automáticamente el volumen acústico desde los dBFS del micrófono. Se usa el nivel digital máximo que tú configures abajo, sin elevar el volumen físico ni subir el nivel automáticamente. Una fase óptima puede desplazarse con la posición o la latencia de Android.</p></div><div class="panel full"><h2>Generador de prueba manual</h2><p class="small">Disponible en dormitorio, comercio, fábrica o vehículo. <strong>No exige un tono estable ni estar en un auto.</strong> Emite únicamente una senoide sintética: no envía el audio del micrófono a los parlantes.</p>
+<div class="fields"><div class="control"><div class="range-header"><label for="frequency">Frecuencia</label><output id="frequencyValue">150 Hz</output></div><input type="range" id="frequency" min="40" max="2000" step="0.1" value="150"><div class="fields" style="margin-top:8px"><div><label for="frequencyNumber" class="small">Ajuste preciso (Hz)</label><input id="frequencyNumber" type="number" min="40" max="2000" step="0.1" value="150" inputmode="decimal"></div><div style="display:flex;align-items:end"><button class="btn secondary" id="useDetected" disabled>🎯 Igualar Hz medidos</button></div></div><div id="matchStatus" class="small" style="margin-top:8px">Frecuencia inicial de 150 Hz. Pulsa «Igualar Hz medidos» después de medir un tono estable con el sonido de salida APAGADO.</div></div><div class="control"><div class="range-header"><label for="phase">Fase</label><output id="phaseValue">0°</output></div><input type="range" id="phase" min="0" max="359" step="1" value="0"></div></div>
+<div class="control"><div class="range-header"><label for="amplitude">Nivel digital máximo</label><output id="amplitudeValue">−42 dBFS</output></div><input type="range" id="amplitude" min="-60" max="-30" step="1" value="-42"><div class="small">El nivel digital regula la señal sintetizada, NO se puede equiparar directamente al dBFS del micrófono. Si escuchas poco por debajo de 100–150 Hz, puede ser falta de graves del parlante.</div><label class="check"><input type="checkbox" id="highOutputCheck"><span>Permitir rango avanzado hasta −18 dBFS. Entiendo que puede sonar fuerte según la salida y mantengo el volumen físico bajo.</span></label><div class="small warning" id="levelNote">Rango normal: −60 a −30 dBFS (pico). Rango avanzado: hasta −18 dBFS, solo tras habilitarlo.</div></div>
+<label class="check"><input type="checkbox" id="readyCheck"><span>Estoy en un lugar apropiado para hacer la prueba y mantendré el volumen de reproducción bajo.</span></label>
+<div class="actions"><button class="btn main" id="startTone">▶ Reproducir tono · máx. 30 s</button><button class="btn danger" id="stopTone" disabled>■ PARAR sonido</button></div><div class="status" id="toneStatus">Preparado para una prueba manual. La salida del navegador no se puede verificar automáticamente.</div><div class="broadbox" style="margin-top:15px"><strong>Qué significa «igualar»:</strong> el botón copia los Hz de un tono detectado antes de reproducir. No copia el nivel acústico ni invierte la fase real, que depende del retardo, la posición y la ruta de salida. <strong>Frecuencia coincidente no implica cancelación.</strong><br><br>El ruido blanco es de banda ancha y cambia continuamente. <strong>Un tono no lo cancela globalmente.</strong> Esta función permite investigar tonos superpuestos y comprobar si aumentan o disminuyen los niveles medidos en un punto. La respuesta del parlante del teléfono puede ser débil en frecuencias graves.</div></div>
+<div class="panel full"><h2>Comparación puntual OFF / ON / OFF</h2><p class="small">Con el micrófono encendido, mide el entorno sin tono (OFF), luego con tono (ON) y finalmente sin tono (OFF). Descarta resultados con ruido de fondo inestable. El resultado corresponde <strong>solo al punto donde está el micrófono</strong>, no al dormitorio completo.</p><div class="actions"><button class="btn secondary" id="compareButton">Medir comparación · ~11 s</button><button class="btn outline" id="stopCompare" disabled>Cancelar comparación</button></div><div id="compareStatus" class="status">Activa el micrófono y confirma el volumen bajo antes de comparar.</div><div class="result" id="compareResult" style="margin-top:15px" hidden></div></div></div></section>
+<section class="section" id="session" role="tabpanel" hidden><div class="layout"><div class="panel full"><h2>Datos de la sesión</h2><p class="small">Los cálculos se hacen localmente. No grabamos ni transmitimos audio; solo recopilamos métricas derivadas mientras esta pestaña está abierta. La exportación es opcional.</p><div class="metricwrap"><div class="metric"><div class="label">Muestras registradas</div><div class="value" id="sampleCount">0</div></div><div class="metric"><div class="label">Tiempo de sesión</div><div class="value" id="sessionTime">0:00</div></div><div class="metric"><div class="label">Intervalo</div><div class="value" id="sampleInterval">0,25 s</div></div></div><div class="actions"><button class="btn secondary" id="downloadCsv" disabled>Exportar CSV</button><button class="btn secondary" id="downloadJson" disabled>Exportar JSON</button><button class="btn outline" id="clearSession">Borrar datos</button></div><div id="sessionStatus" class="status">Aún no hay datos.</div></div><div class="panel full"><h3>Limitaciones técnicas reales</h3><p class="copy">Una app web en Android no garantiza acceso a todos los micrófonos físicos, sincronización de baja latencia o la ruta de audio elegida. Bluetooth y Android Auto agregan latencia. Cancelar ruido blanco de banda ancha requiere referencia predictiva, calibración acústica y un sistema de muy baja latencia. Aquí probamos <strong>medición ambiental y generación controlada</strong>, no cancelación de carretera verificada.</p><div id="browserInfo" class="small"></div><button id="installBtn" class="btn secondary install">Instalar en dispositivo</button><div id="installHelp" class="small">Si aparece «Instalar aplicación» en el menú de Chrome, puedes agregarla a inicio. La instalación requiere una versión alojada por HTTPS.</div></div></div></section>
+<footer class="footer">QuietCab Lab · Versión portátil v0.4. Sin cuenta, sin grabaciones y sin telemetría. Este instrumento no sustituye un sonómetro calibrado ni un sistema de control acústico certificado.</footer>
+</main>
+<div class="stop-dock" id="stopDock"><div><span class="dot play"></span> <b id="dockText">Sonido de prueba activo</b><div class="tiny">El sonido termina automáticamente en 30 segundos</div></div><button class="btn danger" id="dockStop">■ PARAR</button></div><div class="toast" id="toast" role="alert" hidden></div>
+<script id="workletSource" type="text/plain">class SafeToneProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.phase = 0;
+    this.frequency = 150;
+    this.relativePhase = 0;
+    this.targetPhase = 0;
+    this.goalGain = 0;
+    this.gain = 0;
+    this.limit = Math.pow(10, -18/20);
+    this.deadline = 0;
+    this.sampleCount = 0;
+    this.heartbeat = 0;
+    this.active = false;
+    this.port.onmessage = (event) => {
+      const d = event.data || {};
+      if (d.type === 'heartbeat') {
+        this.heartbeat = this.sampleCount;
+      } else if (d.type === 'configure') {
+        if (![d.frequency,d.phaseDegrees,d.dbfs].every(Number.isFinite) || d.frequency < 40 || d.frequency > 2000 || d.dbfs < -60 || d.dbfs > -18 || d.phaseDegrees < 0 || d.phaseDegrees >= 360) {
+          this.active = false; this.goalGain = 0; return;
+        }
+        this.frequency = d.frequency;
+        this.targetPhase = d.phaseDegrees * Math.PI / 180;
+        this.goalGain = Math.min(Math.pow(10, d.dbfs/20), this.limit);
+        if (!this.active) this.deadline = this.sampleCount + Math.floor(30 * sampleRate);
+        this.heartbeat = this.sampleCount;
+        this.active = true;
+      } else if (d.type === 'stop') {
+        this.goalGain = 0; this.active = false;
+      }
+    };
+  }
+  process(inputs, outputs) {
+    const output = outputs[0];
+    if (!output || !output.length) return true;
+    const n = output[0].length;
+    // Protection even when UI stalls or loses focus.
+    if (this.active && ((this.sampleCount-this.heartbeat > sampleRate*1.2) || this.sampleCount >= this.deadline)) {
+      this.active = false; this.goalGain = 0;
+    }
+    const slope = 1 / Math.max(1, .05*sampleRate);
+    for (let i=0;i<n;i++) {
+      this.gain += (this.goalGain-this.gain) * slope;
+      let delta = this.targetPhase - this.relativePhase;
+      while(delta>Math.PI) delta-=2*Math.PI;
+      while(delta< -Math.PI) delta+=2*Math.PI;
+      this.relativePhase += delta*slope;
+      const value = Math.max(-this.limit, Math.min(this.limit, this.gain * Math.sin(this.phase+this.relativePhase)));
+      this.phase += 2*Math.PI*this.frequency/sampleRate;
+      if(this.phase>=2*Math.PI) this.phase -= 2*Math.PI;
+      for(const channel of output) channel[i] = Number.isFinite(value) ? value : 0;
+    }
+    this.sampleCount += n;
+    return true;
+  }
+}
+registerProcessor('quietcab-safe-tone', SafeToneProcessor);
+</script>
+<script>'use strict';
+// QuietCab Lab Portable: all processing takes place in the browser; no network requests.
+const el = (id) => document.getElementById(id);
+const app = {
+  ctx:null, stream:null, source:null, analyser:null, silent:null,
+  track:null, toneNode:null, workletLoaded:false,
+  timer:null, beat:null, stopToneTimer:null,
+  micGeneration:0, comparisonGeneration:0, toneGeneration:0,
+  recording:[], startAt:performance.now(), latest:null, samples:0,
+  toneStart:0, soundActive:false, comparisonActive:false, captureActive:false, autoActive:false, profile:null, autoTrials:[], oneTapGeneration:0,
+  freqData:null, timeData:null, installPrompt:null, hist:[], tonalHist:[], tonalCandidate:null, frequencySource:'manual'
+};
+const fmt=(v,d=1)=>Number.isFinite(v)?v.toFixed(d).replace('.',','):'—';
+const db=(power)=>power>1e-15?10*Math.log10(power):-120;
+const pow=(v)=>Math.pow(10,v/10);
+function uiStatus(id,message,type=''){const e=el(id);e.textContent=message;e.className='status '+type;}
+function notify(msg){el('toast').textContent=msg;el('toast').hidden=false;clearTimeout(notify.t);notify.t=setTimeout(()=>el('toast').hidden=true,5000);}
+function errorText(e){const n=e?.name||'';if(n==='NotAllowedError'||n==='PermissionDeniedError')return 'Micrófono bloqueado: autoriza el acceso en Chrome y vuelve a intentar.';if(n==='NotFoundError')return 'No se detectó micrófono utilizable.';if(n==='NotReadableError')return 'El micrófono está ocupado por otra aplicación o no se puede abrir.';if(n==='SecurityError'||!window.isSecureContext)return 'Se requiere abrir en Chrome desde un origen seguro HTTPS o un archivo local compatible.';return 'No fue posible iniciar: '+String(e?.message||e||'error desconocido');}
+function currentSettings(){return app.track?.getSettings?.()||{};}
+function updateContextNotice(){const type=el('environment').value; const msg={dormitorio:'Puedes medir y experimentar en casa sin altavoces externos. Los graves pueden ser demasiado débiles en el parlante del teléfono.',vehiculo:'Si estás en un vehículo, realiza ajustes y pruebas solo estando estacionado. No manipules esta app mientras conduces.',industria:'En industria, la medición con teléfono NO sustituye un sonómetro ni la protección auditiva reglamentaria.',libre:'Selecciona cualquier ambiente; el micrófono funciona independientemente de la salida de audio.'};el('contextNote').textContent=msg[type];const b=el('globalWarning');b.innerHTML=type==='vehiculo'?'<strong>Vehículo:</strong> realiza las pruebas únicamente estacionado, con el volumen bajo. PARAR detiene los tonos.':'<strong>Prueba acústica:</strong> comienza con volumen bajo. Emitir tonos puede aumentar el ruido, y una caída puntual en el micrófono no significa silencio en toda la habitación. El sonido se corta tras 30 s.';}
+function toggleTabs(name){for(const button of document.querySelectorAll('[data-tab]'))button.setAttribute('aria-selected',String(button.dataset.tab===name));for(const section of document.querySelectorAll('section.section'))section.hidden=section.id!==name;}
+function timeString(ms){const sec=Math.floor(ms/1000);return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+function syncSessionUI(){el('sampleCount').textContent=String(app.recording.length);el('sessionTime').textContent=timeString(performance.now()-app.startAt);el('downloadCsv').disabled=!app.recording.length;el('downloadJson').disabled=!app.recording.length;el('sessionStatus').textContent=app.recording.length?app.recording.length+' registros de métricas. El audio original nunca se guarda.':'Aún no hay datos.';}
+function startStopVisual(){const live=!!app.stream&&app.track?.readyState==='live';el('stopMic').disabled=!app.stream;el('startMic').disabled=!!app.stream;el('micBadge').className='pill '+(live?'live':'off');el('micBadge').innerHTML='<span class="dot '+(live?'':'off')+'"></span>'+(live?'Micrófono activo':'Micrófono apagado');el('startTone').disabled=app.soundActive || app.comparisonActive;el('useDetected').disabled=!app.tonalCandidate||app.soundActive||app.comparisonActive;el('useDetectedMeasure').disabled=!app.tonalCandidate||app.soundActive||app.comparisonActive;el('stopTone').disabled=!app.soundActive;el('compareButton').disabled=!live||app.comparisonActive||app.autoActive||app.captureActive;el('captureProfile').disabled=!live||app.soundActive||app.comparisonActive||app.autoActive||app.captureActive;el('autoRun').disabled=!live||!app.profile?.candidateHz||app.soundActive||app.comparisonActive||app.autoActive||app.captureActive;el('autoStop').disabled=!(app.autoActive||app.captureActive);el('oneTap').disabled=app.autoActive||app.captureActive||app.soundActive||app.comparisonActive;el('deleteProfile').disabled=app.autoActive||app.captureActive;el('stopCompare').disabled=!app.comparisonActive;el('stopDock').classList.toggle('active',app.soundActive||app.comparisonActive||app.autoActive||app.captureActive);el('dockText').textContent=app.captureActive?'Capturando perfil ambiental':app.autoActive?'Calibración automática en curso':app.comparisonActive?'Comparación acústica en curso':'Sonido de prueba activo';}
+function setupCanvas(){const c=el('spectrum');const rect=c.getBoundingClientRect();const ratio=Math.min(2,window.devicePixelRatio||1);c.width=Math.max(300,Math.floor(rect.width*ratio));c.height=Math.max(170,Math.floor(rect.height*ratio));drawSpectrum();}
+function drawSpectrum(){const canvas=el('spectrum');if(!canvas.width) return;const g=canvas.getContext('2d');const w=canvas.width,h=canvas.height;g.clearRect(0,0,w,h);g.fillStyle='#091521';g.fillRect(0,0,w,h);const m={l:15,r:12,t:14,b:18};const minHz=30,maxHz=10000;const X=f=>m.l+(w-m.l-m.r)*(Math.log(f/minHz)/Math.log(maxHz/minHz));const Y=d=>m.t+(h-m.t-m.b)*(Math.max(-120,Math.min(-10,d))+10)/(-110);
+for(let d=-100;d<=-20;d+=20){g.strokeStyle='#254154';g.lineWidth=1;g.setLineDash([3,6]);g.beginPath();g.moveTo(m.l,Y(d));g.lineTo(w-m.r,Y(d));g.stroke();}
+for(const freq of [100,300,1000,3000]){g.strokeStyle='#213549';g.setLineDash([2,7]);g.beginPath();g.moveTo(X(freq),m.t);g.lineTo(X(freq),h-m.b);g.stroke();}g.setLineDash([]);
+if(!app.freqData||!app.ctx){g.textAlign='center';g.fillStyle='#a0b6c3';g.font=Math.round(h/14)+'px system-ui';g.fillText('Activa el micrófono para ver el espectro',w/2,h/2);return;}
+const sr=app.ctx.sampleRate, fft=app.analyser.fftSize;g.beginPath();let drew=false;for(let i=1;i<app.freqData.length;i++){const f=i*sr/fft;if(f<minHz||f>maxHz)continue;const x=X(f),y=Y(app.freqData[i]);if(!drew){g.moveTo(x,y);drew=true}else g.lineTo(x,y);}g.strokeStyle='#46dbca';g.lineWidth=Math.max(1.3,w/400);g.stroke();
+if(app.latest&&Number.isFinite(app.latest.peakHz)){const fx=X(app.latest.peakHz);g.setLineDash([5,5]);g.strokeStyle='#e4b96d';g.beginPath();g.moveTo(fx,m.t);g.lineTo(fx,h-m.b);g.stroke();g.setLineDash([]);}
+}
+function getMeterSnapshot(){if(!app.analyser||!app.freqData||!app.timeData)return null;try{app.analyser.getFloatTimeDomainData(app.timeData);app.analyser.getFloatFrequencyData(app.freqData);}catch{return null;}
+let sum=0,max=0;for(let i=0;i<app.timeData.length;i++){const v=app.timeData[i];sum+=v*v;max=Math.max(max,Math.abs(v));}const rmsPower=Math.max(0,sum/app.timeData.length);const rmsDb=db(rmsPower);
+const data=app.freqData,sr=app.ctx.sampleRate,size=app.analyser.fftSize;const freq=i=>i*sr/size;
+function powerBetween(f0,f1){const lo=Math.max(1,Math.ceil(f0*size/sr)),hi=Math.min(data.length-1,Math.floor(f1*size/sr));let p=0;for(let i=lo;i<=hi;i++)p+=pow(Math.max(-120,Math.min(0,data[i])));return p;}
+let maxDb=-140,maxI=-1;for(let i=1;i<data.length;i++){const f=freq(i);if(f<40||f>10000)continue;const v=data[i];if(v>maxDb){maxDb=v;maxI=i;}}
+let peakHz=null;if(maxI>=1&&maxDb>-105&&maxI<data.length-1){const a=data[maxI-1],b=data[maxI],c=data[maxI+1];const denom=a-2*b+c;const off=Math.abs(denom)>1e-7?Math.max(-.5,Math.min(.5,.5*(a-c)/denom)):0;peakHz=(maxI+off)*sr/size;}
+// Estimate a local tonal candidate separately from the strongest FULL-BAND peak.
+// A broadband spectral maximum or synthesized output MUST NOT be treated as a target.
+let localPeakI=-1, localMaxDb=-120;
+for(let i=1;i<data.length-1;i++){
+ const hz=freq(i);
+ if(hz<40||hz>2000)continue;
+ const v=data[i];
+ if(Number.isFinite(v)&&v>localMaxDb){localMaxDb=v;localPeakI=i;}
+}
+let tonalHz=null,tonalProminence=0;
+if(rmsDb>-78&&localPeakI>=1&&localMaxDb>-95){
+ const cf=freq(localPeakI),floor=[];
+ for(let i=1;i<data.length;i++){
+  const hz=freq(i),dist=Math.abs(hz-cf);
+  if(hz>=40&&hz<=2000&&dist>=Math.max(13,cf*.018)&&dist<=Math.max(100,cf*.28))floor.push(data[i]);
+ }
+ if(floor.length>=7){
+  floor.sort((a,b)=>a-b);
+  tonalProminence=localMaxDb-floor[Math.floor(floor.length/2)];
+  if(tonalProminence>=13){
+   const a=data[localPeakI-1],b=data[localPeakI],c=data[localPeakI+1],den=a-2*b+c;
+   const offset=Math.abs(den)>1e-7?Math.max(-.5,Math.min(.5,.5*(a-c)/den)):0;
+   tonalHz=(localPeakI+offset)*sr/size;
+  }
+ }
+}
+// Spectral flatness as a broadband/tonal heuristic: normalized over 100-5000 Hz.
+let logsum=0,arsum=0,n=0;for(let i=1;i<data.length;i++){const f=freq(i);if(f<100||f>5000)continue;const p=pow(Math.max(-120,Math.min(0,data[i])));logsum+=Math.log(Math.max(p,1e-12));arsum+=p;n++;}
+const flatness=n&&arsum>0?Math.min(1,Math.exp(logsum/n)/(arsum/n)):null;
+const low=[];for(let i=1;i<data.length;i++){const f=freq(i);if(f>=60&&f<=250)low.push(data[i]);}low.sort((a,b)=>a-b);const noiseFloor=low.length?low[Math.floor(low.length/2)]:-120;
+let kind='Sin señal',prominence=0;
+if(rmsDb>-82){prominence=peakHz>=60&&peakHz<=250?maxDb-noiseFloor:0;if(flatness!==null){kind=(flatness>.37&&prominence<14)?'Banda ancha':(flatness<.12||prominence>18)?'Tonal / mezcla':'Mixto / variable';}}
+const bands=[[30,100],[100,300],[300,1000],[1000,3000],[3000,10000]].map(([lo,hi])=>({lo,hi,power:powerBetween(lo,hi)}));
+const metrics={t:Math.round(performance.now()-app.startAt),rmsDb,rmsPower,clip:max>.96,flatness,noiseKind:kind,peakHz,peakDb:maxDb,prominence,tonalHz,tonalProminence,bandPower:powerBetween(Math.max(30,parseInt(el('frequency').value)-6),parseInt(el('frequency').value)+6),bands};
+return metrics;
+}
+function trackTonalCandidate(m){
+ if(app.soundActive||app.comparisonActive)return; // prevent self-detection and feedback
+ if(Number.isFinite(m.tonalHz)&&m.tonalProminence>=13){
+  app.tonalHist.push({hz:m.tonalHz,t:performance.now()});
+  if(app.tonalHist.length>12)app.tonalHist.shift();
+ }else{app.tonalHist=[];app.tonalCandidate=null;}
+ let message='Se necesita un componente estable. El ruido distribuido no tiene una frecuencia única.';
+ if(app.tonalHist.length>=6){
+  const recent=app.tonalHist.slice(-6);
+  const sorted=recent.map(x=>x.hz).sort((a,b)=>a-b);
+  const median=(sorted[2]+sorted[3])/2;
+  const tol=Math.max(2.5,median*.015);
+  const stable=recent[5].t-recent[0].t>=1000&&recent.every(x=>Math.abs(x.hz-median)<=tol);
+  if(stable){app.tonalCandidate={hz:Math.round(median*10)/10,t:performance.now(),prominence:m.tonalProminence};message='Tono estable candidato (aproximado). Puedes copiar sus Hz. La fase y la amplitud acústica NO están sincronizadas.';}
+  else {app.tonalCandidate=null;message='Pico detectado, pero la frecuencia cambia. Espera con el sonido del teléfono apagado.';}
+ }else if(app.tonalHist.length) {app.tonalCandidate=null;message='Posible tono detectado. Comprobando estabilidad durante ~2 s…';}
+ el('candidateValue').textContent=app.tonalCandidate?fmt(app.tonalCandidate.hz,1)+' Hz':'—';
+ el('candidateStatus').textContent=message;
+ startStopVisual();
+}
+function setManualFrequency(value,source='manual'){
+ const hz=Number(value);
+ if(!Number.isFinite(hz)||hz<40||hz>2000)return false;
+ const fixed=Math.round(hz*10)/10;
+ el('frequency').value=String(fixed);
+ el('frequencyNumber').value=String(fixed);
+ el('frequencyValue').textContent=fmt(fixed,1)+' Hz';
+ app.frequencySource=source;
+ el('matchStatus').textContent=source==='medida'
+  ?'Frecuencia copiada desde el micrófono antes de emitir: '+fmt(fixed,1)+' Hz. Fase y nivel siguen siendo independientes; aún NO hay cancelación.'
+  :'Frecuencia manual: '+fmt(fixed,1)+' Hz. Usa «Igualar Hz medidos» para copiar un tono estable medido sin emisión.';
+ if(app.soundActive&&!app.comparisonActive)app.toneNode?.port.postMessage(soundParams());
+ return true;
+}
+function useDetected(){
+ if(app.soundActive||app.comparisonActive){notify('Primero detén el sonido para volver a capturar el ruido original.');return;}
+ const v=app.tonalCandidate?.hz;
+ if(!Number.isFinite(v)){notify('No hay un tono estable. Mide con el sonido apagado durante unos segundos.');return;}
+ setManualFrequency(v,'medida');toggleTabs('experiment');notify('Generador ajustado a '+fmt(v,1)+' Hz medidos. Aún falta comparar OFF/ON.');
+}
+function updateBands(m){const maxBand=Math.max(1e-12,...m.bands.map(x=>x.power));for(let i=0;i<m.bands.length;i++){const b=m.bands[i];const rel=10*Math.log10(Math.max(1e-12,b.power)/maxBand);const dom=el('band'+i);if(!dom)continue;dom.querySelector('.track div').style.width=Math.max(1,100+rel*2.5)+'%';dom.querySelector('.value-right').textContent=(rel>-65?fmt(rel,0):'≤−65')+' dB';}}
+function renderMetrics(m){el('rms').textContent=m.rmsDb<=-119?'≤−120':fmt(m.rmsDb,1);el('peak').textContent=m.peakHz===null?'—':fmt(m.peakHz,0);el('noiseKind').textContent=m.noiseKind;el('flatnessLabel').textContent=m.flatness===null?'Planitud: —':'Planitud: '+fmt(m.flatness,2);updateBands(m);
+const flag=m.noiseKind==='Banda ancha';const text=m.rmsDb<-82?'Señal muy débil o silencio. Si esperas escuchar un ruido, revisa el permiso, la selección del micrófono y el procesamiento del teléfono.':flag?'La señal captada se distribuye entre muchas frecuencias. Podría ser ventilación o ruido semejante al blanco. Un tono de prueba no basta para eliminarla.':m.noiseKind==='Tonal / mezcla'?'Se observa una componente tonal o una mezcla. Puedes usar el generador manual para investigar un punto, pero medir una disminución requiere comparar con la fuente estable.':'El espectro varía o mezcla componentes. La app permite medir y experimentar sin exigir un tono estable.';
+el('interpretation').textContent=text;el('spectrumNote').textContent='Medición en vivo · FFT '+app.analyser.fftSize+' · '+fmt(app.ctx.sampleRate,0)+' muestras/s · frecuencias y niveles estimados.';}
+function metricTick(){if(!app.stream||!app.track||app.track.readyState!=='live'){if(app.stream)stopAll('El micrófono dejó de entregar audio.');return;}
+const m=getMeterSnapshot();if(!m)return;app.latest=m;trackTonalCandidate(m);renderMetrics(m);drawSpectrum();app.hist.push(m);if(app.hist.length>100)app.hist.shift();
+if(app.recording.length<2000){app.recording.push({time_ms:m.t,environment:el('environment').value,audioRoute:el('audioRoute').value,rms_dbfs:m.rmsDb,peak_hz:m.peakHz,tonal_candidate_hz:m.tonalHz,tonal_prominence_db:m.tonalProminence,stable_target_hz:app.tonalCandidate?.hz??null,frequency_source:app.frequencySource,flatness:m.flatness,noise_kind:m.noiseKind,tone_on:app.soundActive,frequency_hz:+el('frequency').value,phase_degrees:+el('phase').value,output_peak_dbfs:app.soundActive?+el('amplitude').value:null,...Object.fromEntries(m.bands.map((x,i)=>['band'+i+'_rel_db',db(x.power)]))});}
+if(app.samples++%4===0)syncSessionUI();}
+async function getContext(){if(app.ctx&&app.ctx.state==='closed')app.ctx=null;if(!app.ctx){app.ctx=new AudioContext({latencyHint:'interactive'});app.ctx.addEventListener('statechange',()=>{if(app.ctx&&(app.ctx.state==='suspended'||app.ctx.state==='interrupted')&&app.soundActive)hardStopTone('Audio interrumpido.');});}
+if(app.ctx.state==='suspended'){await app.ctx.resume();}return app.ctx;}
+async function populateDevices(){if(!navigator.mediaDevices?.enumerateDevices)return;try{const devices=await navigator.mediaDevices.enumerateDevices();const select=el('inputDevice');const previous=select.value;select.replaceChildren();const base=document.createElement('option');base.value='';base.textContent='Predeterminada del sistema';select.append(base);for(const device of devices.filter(d=>d.kind==='audioinput')){if(!device.deviceId)continue;const opt=document.createElement('option');opt.value=device.deviceId;opt.textContent=device.label||'Micrófono '+select.options.length;select.append(opt);}if([...select.options].some(x=>x.value===previous))select.value=previous;}catch{}}
+async function startMic(){if(app.stream)return;const g=++app.micGeneration;uiStatus('micStatus','Solicitando acceso al micrófono…');if(!navigator.mediaDevices?.getUserMedia){uiStatus('micStatus','Este navegador/origen no permite capturar audio. Prueba desde una página HTTPS en Chrome Android; la apertura local puede estar bloqueada.','bad');return;}
+let stream=null;try{const chosen=el('inputDevice').value;const audio={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1,...(chosen?{deviceId:{ideal:chosen}}:{})};stream=await navigator.mediaDevices.getUserMedia({audio});if(g!==app.micGeneration){stream.getTracks().forEach(t=>t.stop());return;}
+const ctx=await getContext();if(g!==app.micGeneration){stream.getTracks().forEach(t=>t.stop());return;}app.stream=stream;app.track=stream.getAudioTracks()[0];app.track.addEventListener('ended',()=>stopAll('El micrófono terminó la sesión.'));app.track.addEventListener('mute',()=>{hardStopTone('Micrófono silenciado.');});app.source=ctx.createMediaStreamSource(stream);app.analyser=ctx.createAnalyser();app.analyser.fftSize=16384;app.analyser.smoothingTimeConstant=.45;app.analyser.minDecibels=-120;app.analyser.maxDecibels=-10;app.silent=ctx.createGain();app.silent.gain.value=0;app.source.connect(app.analyser);app.analyser.connect(app.silent);app.silent.connect(ctx.destination);app.freqData=new Float32Array(app.analyser.frequencyBinCount);app.timeData=new Float32Array(app.analyser.fftSize);
+const s=currentSettings();const reported=['echoCancellation','noiseSuppression','autoGainControl'].map(k=>k+': '+(s[k]===undefined?'desconocido':(s[k]?'ACTIVO':'desactivado'))).join(' · ');
+el('actualMic').textContent=reported+' | Frecuencia: '+(s.sampleRate||ctx.sampleRate)+' Hz | Canales: '+(s.channelCount||'?');const warn=['echoCancellation','noiseSuppression','autoGainControl'].some(k=>s[k]===true);uiStatus('micStatus',warn?'Micrófono activo, pero el navegador informa procesamiento acústico activo. La comparación puede ser poco fiable.':'Micrófono activo. Medición digital exploratoria, sin calibración de presión sonora.',warn?'warn':'good');startStopVisual();setupCanvas();clearInterval(app.timer);app.timer=setInterval(metricTick,250);await populateDevices();}catch(e){if(stream){stream.getTracks().forEach(t=>t.stop());}if(g===app.micGeneration){uiStatus('micStatus',errorText(e),'bad');stopMic('');}}}
+function stopMic(reason='Medición detenida.'){app.micGeneration++;app.captureActive=false;++app.oneTapGeneration;app.comparisonGeneration++;clearInterval(app.timer);app.timer=null;if(app.comparisonActive)abortComparison('Comparación cancelada.');if(app.autoActive)stopAutomatic('Automático detenido: se desactivó el micrófono.');app.captureActive=false;hardStopTone('');if(app.stream){app.stream.getTracks().forEach(t=>t.stop());app.stream=null;}try{app.source?.disconnect();app.analyser?.disconnect();app.silent?.disconnect();}catch{}app.source=null;app.analyser=null;app.silent=null;app.track=null;app.latest=null;app.freqData=null;app.timeData=null;app.hist=[];app.tonalHist=[];app.tonalCandidate=null;el('candidateValue').textContent='—';el('candidateStatus').textContent='Micrófono detenido.';for(const id of ['rms','peak'])el(id).textContent='—';el('noiseKind').textContent='—';el('flatnessLabel').textContent='Espectro';el('actualMic').textContent='No disponible hasta iniciar.';el('interpretation').textContent='Inicia el micrófono para interpretar las características del sonido.';el('spectrumNote').textContent='La gráfica aparecerá al activar el micrófono.';if(reason)uiStatus('micStatus',reason);startStopVisual();drawSpectrum();syncSessionUI();}
+async function initToneWorklet(){const ctx=await getContext();if(app.toneNode)return app.toneNode;if(!ctx.audioWorklet){throw Error('AudioWorklet no disponible en este navegador. Abre la aplicación con Chrome actualizado y HTTPS.');}
+const text=el('workletSource').textContent;const blob=new Blob([text],{type:'application/javascript'});const url=URL.createObjectURL(blob);
+try{await ctx.audioWorklet.addModule(url);}catch(blobError){
+  // Some Android file:// browsers reject blob modules with opaque origins. Try a data: module.
+  const dataURL=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});
+  try{await ctx.audioWorklet.addModule(dataURL);}catch{throw blobError;}
+}finally{URL.revokeObjectURL(url);}app.toneNode=new AudioWorkletNode(ctx,'quietcab-safe-tone',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});app.toneNode.connect(ctx.destination);return app.toneNode;}
+function soundParams(){const raw=+el('amplitude').value;const cap=el('highOutputCheck').checked?-18:-30;return {type:'configure',frequency:+el('frequency').value,phaseDegrees:+el('phase').value,dbfs:Math.min(cap,raw)};}
+function setTonePhase(phase){const degrees=((Math.round(phase)%360)+360)%360;el('phase').value=String(degrees);el('phaseValue').textContent=degrees+'°';if(app.soundActive)app.toneNode?.port.postMessage(soundParams());}
+
+function heartbeatStart(){clearInterval(app.beat);app.beat=setInterval(()=>{try{app.toneNode?.port.postMessage({type:'heartbeat'});}catch{}},250);}
+async function startTone(fromComparison=false){if(app.soundActive){hardStopTone('Tono detenido para reiniciar.');}
+const toneGeneration=++app.toneGeneration;
+if(!fromComparison&&!el('readyCheck').checked){uiStatus('toneStatus','Marca la confirmación de volumen bajo antes de reproducir sonido.','warn');return false;}
+let turn=app.comparisonGeneration;try{const node=await initToneWorklet();if(toneGeneration!==app.toneGeneration||(fromComparison&&turn!==app.comparisonGeneration))return false;node.port.postMessage(soundParams());app.soundActive=true;app.toneStart=performance.now();heartbeatStart();clearTimeout(app.stopToneTimer);app.stopToneTimer=setTimeout(()=>hardStopTone('Máximo de 30 segundos alcanzado: sonido detenido.'),30000);uiStatus('toneStatus','Salida: '+fmt(+el('frequency').value,1)+' Hz a '+el('amplitude').value+' dBFS (pico digital). NO es cancelación; el nivel acústico depende del parlante.','warn');startStopVisual();return true;}catch(e){uiStatus('toneStatus','No se pudo generar el tono: '+errorText(e),'bad');hardStopTone('');return false;}}
+function hardStopTone(reason='Sonido detenido.',abortComp=false){app.toneGeneration++;if(abortComp)abortComparison('Comparación cancelada.');clearTimeout(app.stopToneTimer);app.stopToneTimer=null;clearInterval(app.beat);app.beat=null;app.soundActive=false;try{app.toneNode?.port.postMessage({type:'stop'});}catch{}if(reason)uiStatus('toneStatus',reason);startStopVisual();}
+function stopAll(reason='Sesión detenida.'){stopAutomatic('');abortComparison('');stopMic(reason);hardStopTone('');}
+
+async function waitAbortable(ms,token){const start=performance.now();while(performance.now()-start<ms){if(token!==app.comparisonGeneration||!app.stream||!app.track||app.track.readyState!=='live')throw Error('Prueba interrumpida');await new Promise(r=>setTimeout(r,100));}}
+async function sampleWindow(ms,token){const sampled=[];const time=performance.now();while(performance.now()-time<ms){await waitAbortable(100,token);const m=getMeterSnapshot();if(!m||m.clip)throw Error('Micrófono ausente o saturado: reduce el volumen');sampled.push(m);}if(sampled.length<3)throw Error('Muestras insuficientes');const freqs=sampled.map(x=>x.tonalHz).filter(Number.isFinite).sort((a,b)=>a-b);return {count:sampled.length,rmsPower:sampled.reduce((s,x)=>s+x.rmsPower,0)/sampled.length,bandPower:sampled.reduce((s,x)=>s+x.bandPower,0)/sampled.length,tonalHz:freqs.length?freqs[Math.floor(freqs.length/2)]:null,flatness:sampled.reduce((s,x)=>s+(x.flatness||0),0)/sampled.length,tonalProminence:sampled.reduce((s,x)=>s+x.tonalProminence,0)/sampled.length};}
+function abortComparison(message='Comparación cancelada.'){app.comparisonGeneration++;app.comparisonActive=false;if(message)uiStatus('compareStatus',message,'warn');hardStopTone('');startStopVisual();}
+async function runComparison(){if(app.comparisonActive||app.autoActive||app.captureActive)return;if(!app.stream||app.track?.readyState!=='live'){uiStatus('compareStatus','Para comparar, activa primero la medición con el micrófono.','warn');toggleTabs('measure');return;}
+if(!el('readyCheck').checked){uiStatus('compareStatus','Confirma que mantendrás el volumen bajo antes de comparar.','warn');return;}
+if(currentSettings().echoCancellation===true||currentSettings().noiseSuppression===true||currentSettings().autoGainControl===true){uiStatus('compareStatus','El navegador informa supresión de ruido, eco o ganancia automática. No sería fiable comparar ON/OFF.','warn');return;}
+hardStopTone('');const token=++app.comparisonGeneration;app.comparisonActive=true;const target=+el('frequency').value, phase=+el('phase').value,level=+el('amplitude').value;el('compareResult').hidden=true;startStopVisual();
+try{uiStatus('compareStatus','1/3 · Midiendo fuente original (OFF)…');await waitAbortable(800,token);const off1=await sampleWindow(2100,token);
+uiStatus('compareStatus','2/3 · Emitiendo tono (ON)…');if(!await startTone(true))throw Error('No se pudo iniciar el tono');await waitAbortable(900,token);const on=await sampleWindow(2100,token);hardStopTone('');
+uiStatus('compareStatus','3/3 · Midiendo de nuevo sin tono (OFF)…');await waitAbortable(850,token);const off2=await sampleWindow(2100,token);
+const drift=Math.abs(db(off2.rmsPower)-db(off1.rmsPower));const basR=(off1.rmsPower+off2.rmsPower)/2,basB=(off1.bandPower+off2.bandPower)/2;
+const full=db(basR)-db(on.rmsPower);const tonal=db(basB)-db(on.bandPower);const stable=drift<=1.5;
+let verdict=stable?'Comparación exploratoria; NO demuestra cancelación.':'RESULTADO NO VÁLIDO: el ruido original cambió entre las dos mediciones OFF.';
+const detail='Frecuencia: '+target+' Hz · Fase: '+phase+'° · Salida: '+level+' dBFS pico\n'+
+'Nivel total OFF → ON: '+fmt(db(basR),1)+' → '+fmt(db(on.rmsPower),1)+' dBFS\n'+
+'Diferencia de nivel total: '+fmt(full,2)+' dB (positivo = menos señal en el micrófono)\n'+
+'Diferencia cerca de '+target+' Hz: '+fmt(tonal,2)+' dB (energía espectral relativa)\n'+
+'Variación OFF inicial/final: '+fmt(drift,2)+' dB\n'+verdict+'\n'+
+'Una sola comparación sin calibración de ruta ni sincronía no permite concluir reducción de ruido, incluso si aparecen diferencias positivas.';
+el('compareResult').textContent=detail;el('compareResult').hidden=false;uiStatus('compareStatus',stable?'Ensayo terminado. Interpreta las diferencias con cautela.':'Ensayo finalizado, pero el entorno no permaneció estable.',stable?'good':'warn');
+}catch(e){if(token===app.comparisonGeneration)uiStatus('compareStatus','Comparación detenida: '+String(e.message||e),'warn');}
+finally{if(token===app.comparisonGeneration){app.comparisonActive=false;hardStopTone('Sonido detenido.');startStopVisual();}}}
+function renderProfile(){
+ const p=app.profile,elInfo=el('autoProfileInfo');
+ if(!p){elInfo.textContent='Sin perfil guardado. Pulsa «Guardar perfil del ruido» en Medición para recopilar 5 segundos con sonido apagado.';el('profileStatus').textContent='Aún no hay perfil de referencia.';startStopVisual();return;}
+ const stamp=new Date(p.at).toLocaleString('es-CL');
+ const noise=p.kind+' · '+fmt(p.rmsDb,1)+' dBFS · '+stamp;
+ const rest=p.candidateHz?'Tono candidato: '+fmt(p.candidateHz,1)+' Hz (prominencia '+fmt(p.prominence,1)+' dB).':'No se identificó un tono estable. No es posible generar una antífase fiable para ruido de banda ancha desde un solo teléfono.';
+ elInfo.textContent=noise+'\n'+rest;
+ el('profileStatus').textContent='Perfil guardado: '+noise+'. '+rest+' Perfil local de estadísticas, no audio. En Experimento puedes iniciar el ensayo si hay tono estable.';
+ startStopVisual();
+}
+function loadProfile(){
+ try{const p=JSON.parse(localStorage.getItem('quietcab-profile-v04')||'null');if(!p||p.version!==4||!Number.isFinite(p.rmsDb)||!Array.isArray(p.bands))return null;const hz=Number(p.candidateHz);p.candidateHz=Number.isFinite(hz)&&hz>=40&&hz<=2000?hz:null;return p;}catch{return null;}
+}
+function saveProfile(p){app.profile=p;try{localStorage.setItem('quietcab-profile-v04',JSON.stringify(p));}catch{notify('Perfil solo en memoria; el navegador impidió el almacenamiento local.');}renderProfile();}
+async function captureProfile(){
+ if(app.captureActive||app.autoActive||app.comparisonActive||app.soundActive)return;
+ if(!app.stream||app.track?.readyState!=='live'){uiStatus('micStatus','Activa el micrófono antes de capturar el perfil.','warn');toggleTabs('measure');return;}
+ app.captureActive=true;const tok=++app.comparisonGeneration;startStopVisual();const points=[];
+ try{
+  if(app.ctx?.state!=='running')throw Error('El audio no está activo.');
+  for(let i=0;i<25;i++){
+   await waitAbortable(200,tok);if(!app.captureActive||app.soundActive)throw Error('Captura interrumpida');
+   const m=getMeterSnapshot();if(!m||m.clip)throw Error('El micrófono saturó. Reduce el volumen o cambia de posición.');
+   points.push(m);uiStatus('micStatus','Capturando referencia sin emisión… '+Math.round((i+1)/25*100)+' %');
+  }
+  if(points.length<20)throw Error('No hay muestras suficientes');
+  const energies=points.map(p=>p.rmsPower);const rmsPower=energies.reduce((a,b)=>a+b,0)/energies.length;
+  if(db(rmsPower)<-80)throw Error('La señal es demasiado baja para un perfil útil.');
+  const candidates=points.map(p=>p.tonalHz).filter(Number.isFinite).sort((a,b)=>a-b);
+  let candidateHz=null,prom=0;
+  if(candidates.length>=19){
+   const med=candidates[Math.floor(candidates.length/2)];
+   const tol=Math.max(1.25,med*.0035);
+   const stable=candidates.filter(h=>Math.abs(h-med)<=tol).length/candidates.length>=.92;
+   prom=points.reduce((sum,p)=>sum+(p.tonalProminence||0),0)/points.length;
+   if(stable&&prom>=13)candidateHz=Math.round(med*10)/10;
+  }
+  const sorted=points.map(p=>p.rmsDb).sort((a,b)=>a-b);
+  const drift=sorted[Math.floor(sorted.length*.9)]-sorted[Math.floor(sorted.length*.1)];
+  if(drift>4)candidateHz=null;
+  const p={version:4,at:new Date().toISOString(),kind:points[Math.floor(points.length/2)].noiseKind,
+   rmsDb:db(rmsPower),rmsSpreadDb:drift,candidateHz,prominence:prom,
+   bands:points[0].bands.map((b,i)=>({lo:b.lo,hi:b.hi,power:points.reduce((a,x)=>a+x.bands[i].power,0)/points.length})),
+   sampleRate:app.ctx.sampleRate,sourceInput:app.track?.label||'Micrófono del navegador',environment:el('environment').value};
+  saveProfile(p);
+  uiStatus('micStatus',candidateHz?'Referencia guardada. Identifiqué una componente tonal estable: '+fmt(candidateHz,1)+' Hz.':'Perfil guardado. El ruido parece amplio o variable: no hay una única frecuencia apropiada para cancelación con este método.','good');
+ }catch(e){if(tok===app.comparisonGeneration)uiStatus('micStatus','No se pudo guardar el perfil: '+(e?.message||e),'warn');}
+ finally{app.captureActive=false;startStopVisual();}
+}
+function stopAutomatic(message='Ensayo automático cancelado.'){
+ if(!app.autoActive&&!app.captureActive)return;
+ ++app.comparisonGeneration;++app.oneTapGeneration;app.autoActive=false;app.captureActive=false;app.autoTrials=[];hardStopTone('Sonido detenido.');
+ if(message)uiStatus('autoStatus',message,'warn');startStopVisual();
+}
+function autoValidate(off1,on1,off2,on2,off3,targetHz){
+ const o=[off1,off2,off3],b=o.map(p=>db(p.bandPower)),r=o.map(p=>db(p.rmsPower));
+ const offVariation=Math.max(...b)-Math.min(...b);
+ const totalVariation=Math.max(...r)-Math.min(...r);
+ const hz=o.map(p=>p.tonalHz).filter(Number.isFinite);
+ const drift=hz.length===3?Math.max(...hz)-Math.min(...hz):null;
+ const baseline1=(off1.bandPower+off2.bandPower)/2,baseline2=(off2.bandPower+off3.bandPower)/2;
+ const fullBaseline1=(off1.rmsPower+off2.rmsPower)/2,fullBaseline2=(off2.rmsPower+off3.rmsPower)/2;
+ const band=[db(baseline1)-db(on1.bandPower),db(baseline2)-db(on2.bandPower)];
+ const full=[db(fullBaseline1)-db(on1.rmsPower),db(fullBaseline2)-db(on2.rmsPower)];
+ const valid=offVariation<=1.5&&totalVariation<=1.5&&(drift===null||drift<=Math.max(.4,targetHz*.002))&&hz.length>=2;
+ const improvement=valid&&band.every(v=>v>=1.5)&&full.every(v=>v>=-1);
+ return {valid,improvement,band,full,offVariation,totalVariation,drift};
+}
+async function runOneTap(){
+ if(app.autoActive||app.captureActive||app.comparisonActive||app.soundActive)return;
+ if(!el('autoReadyCheck').checked){uiStatus('autoStatus','Marca la confirmación de volumen bajo antes de la prueba de un toque.','warn');return;}
+ const id=++app.oneTapGeneration;
+ if(!app.stream||app.track?.readyState!=='live'){
+  uiStatus('autoStatus','Solicitando permiso del micrófono…');
+  await startMic();
+  if(id!==app.oneTapGeneration)return;
+  if(!app.stream||app.track?.readyState!=='live'){uiStatus('autoStatus','No se pudo iniciar el micrófono. Revisa el mensaje de Medición.','warn');toggleTabs('measure');return;}
+ }
+ const previous=app.profile?.at;
+ uiStatus('autoStatus','Capturando perfil de ruido de 5 segundos, sin reproducción…');
+ await captureProfile();
+ if(id!==app.oneTapGeneration)return;
+ if(!app.profile||app.profile.at===previous){uiStatus('autoStatus','No se pudo capturar un perfil nuevo. Revisa el mensaje de Medición.','warn');return;}
+ if(!app.profile.candidateHz){uiStatus('autoStatus','Perfil guardado: ruido de banda ancha o variable, sin tono estable. No emitiré una señal engañosa ni añadiré ruido. Puedes revisar las bandas en Medición.','warn');return;}
+ await runAutomatic();
+}
+async function runAutomatic(){
+ if(app.autoActive||app.captureActive||app.comparisonActive||app.soundActive)return;
+ const p=app.profile;
+ if(!p?.candidateHz){uiStatus('autoStatus','Primero captura un perfil con un tono estable. Ruido blanco sin periodicidad no permite una inversión simple de fase.','warn');return;}
+ if(!app.stream||app.track?.readyState!=='live'){uiStatus('autoStatus','Inicia antes la medición con el micrófono.','warn');toggleTabs('measure');return;}
+ if(!el('readyCheck').checked&&!el('autoReadyCheck').checked){uiStatus('autoStatus','Confirma primero que el volumen físico es bajo y que puedes detener la prueba.','warn');return;}
+ if(app.ctx?.state!=='running'){uiStatus('autoStatus','Audio detenido. Vuelve a activar el micrófono.','warn');return;}
+ if(['echoCancellation','noiseSuppression','autoGainControl'].some(k=>currentSettings()[k]===true)){
+  uiStatus('autoStatus','El navegador indica procesamiento del micrófono (AGC/eco/ruido). La búsqueda sería poco fiable.','warn');return;
+ }
+ // No automatic gain escalation: the user-selected ceiling is respected.
+ const target=p.candidateHz,age=Date.now()-Date.parse(p.at);
+ if(!Number.isFinite(age)||age>24*3600e3){uiStatus('autoStatus','El perfil tiene más de 24 h. Captura uno nuevo para evitar un ajuste obsoleto.','warn');return;}
+ if(!setManualFrequency(target,'medida'))return;
+ const selectedLimit=+el('amplitude').value;
+ const maxAuto=-30; // automatic mode never raises to the advanced range, even if manually enabled
+ const level=Math.min(selectedLimit,maxAuto);
+ const oldLevel=el('amplitude').value;
+ el('amplitude').value=String(level);el('amplitudeValue').textContent='−'+Math.abs(level)+' dBFS';
+ app.autoActive=true;const token=++app.comparisonGeneration;app.autoTrials=[];el('autoResult').hidden=true;startStopVisual();
+ const trial=async(stage,muted,phase,settle=700,measure=1100)=>{
+  if(token!==app.comparisonGeneration||!app.autoActive)throw Error('Prueba interrumpida');
+  uiStatus('autoStatus',stage); 
+  if(muted){hardStopTone('');}else{setTonePhase(phase);if(!app.soundActive){if(!await startTone(true))throw Error('Fallo al reproducir el tono.');}else app.toneNode.port.postMessage(soundParams());}
+  await waitAbortable(settle,token);const value=await sampleWindow(measure,token);
+  if(!muted && db(value.rmsPower)>p.rmsDb+6)throw Error('El ruido subió demasiado respecto al perfil. Detengo la salida.');
+  const report={stage,muted,phase,level,band:db(value.bandPower),total:db(value.rmsPower),hz:value.tonalHz};app.autoTrials.push(report);
+  return value;
+ };
+ try{
+  const base=await trial('1/4 · Confirmando sonido original (salida apagada)…',true,0,500,1600);
+  if(!Number.isFinite(base.tonalHz)||Math.abs(base.tonalHz-target)>Math.max(2,target*.012))throw Error('La frecuencia del ruido cambió desde el perfil. Captura uno nuevo.');
+  if(Math.abs(db(base.rmsPower)-p.rmsDb)>4)throw Error('El volumen ambiental cambió demasiado desde el perfil. Captura uno nuevo.');
+  const values=[];
+  // Phase order intentionally rearranged to reduce directional time trend.
+  const phases=[0,180,90,270,45,225,135,315];
+  for(let i=0;i<phases.length;i++){
+   const ph=phases[i];const x=await trial('2/4 · Probando fase '+(i+1)+'/8 ('+ph+'°)',false,ph,700,900);
+   values.push({phase:ph,bandPower:x.bandPower,rmsPower:x.rmsPower});
+   if(i===3){const ref=await trial('2/4 · Verificando ruido original entre ensayos…',true,0,650,1000);if(Math.abs(db(ref.bandPower)-db(base.bandPower))>1.5)throw Error('La fuente cambió durante el barrido. No es posible atribuir una reducción al tono.');}
+  }
+  hardStopTone('');
+  const best=values.slice().sort((a,b)=>a.bandPower-b.bandPower)[0];
+  setTonePhase(best.phase);
+  uiStatus('autoStatus','3/4 · Mejor fase aparente: '+best.phase+'°. Verificando con repeticiones independientes…');
+  const o1=await trial('3/4 · Referencia OFF 1/3',true,0,700,1000);
+  const on1=await trial('3/4 · Verificación ON 1/2',false,best.phase,750,1000);
+  const o2=await trial('3/4 · Referencia OFF 2/3',true,0,700,1000);
+  const on2=await trial('3/4 · Verificación ON 2/2',false,best.phase,750,1000);
+  const o3=await trial('4/4 · Referencia OFF final',true,0,700,1000);
+  hardStopTone('');
+  const res=autoValidate(o1,on1,o2,on2,o3,target);
+  if(token!==app.comparisonGeneration)throw Error('Prueba detenida');
+  const verdict=!res.valid?'Resultado no válido: el ruido original cambió durante la verificación.':res.improvement?'Indicio de reducción LOCAL de un tono; repetir para confirmar.':'No se observó reducción consistente durante la validación.';
+  const report='Perfil: '+fmt(target,1)+' Hz · fase ensayada '+best.phase+'° · salida '+level+' dBFS pico\n'+
+   'Reducción de banda cerca del tono: ensayo 1 '+fmt(res.band[0],2)+' dB; ensayo 2 '+fmt(res.band[1],2)+' dB\n'+
+   'Diferencia de nivel total: '+fmt(res.full[0],2)+' / '+fmt(res.full[1],2)+' dB\n'+
+   'Variación de fuente OFF: '+fmt(res.offVariation,2)+' dB (banda); '+fmt(res.totalVariation,2)+' dB (total)\n'+
+   verdict+'\n\nNo es cancelación general ni en el oído; solo comparación local del micrófono, sin sincronía de fase ni calibración acústica de la salida.';
+  el('autoResult').textContent=report;el('autoResult').hidden=false;
+  uiStatus('autoStatus',verdict,res.valid&&res.improvement?'good':'warn');
+  app.lastAuto={date:new Date().toISOString(),targetHz:target,selectedLevel:level,bestPhase:best.phase,validation:res,trials:app.autoTrials.slice(),verdict};
+ }catch(e){if(token===app.comparisonGeneration){el('autoResult').textContent='No hay conclusión válida. '+String(e?.message||e);el('autoResult').hidden=false;uiStatus('autoStatus','Prueba detenida: '+String(e?.message||e),'warn');}}
+ finally{hardStopTone('Sonido detenido.');if(token===app.comparisonGeneration){app.autoActive=false;startStopVisual();}}
+}
+function downloadData(kind){if(!app.recording.length)return;const rows=app.recording;let output,mime,ext;if(kind==='json'){output=JSON.stringify({application:'QuietCab Lab Portable',version:'0.4',measuredAt:new Date().toISOString(),context:{environment:el('environment').value,route:el('audioRoute').value,browser:navigator.userAgent,settings:currentSettings(),contextSampleRate:app.ctx?.sampleRate??null,baseLatency:app.ctx?.baseLatency??null,outputLatency:app.ctx?.outputLatency??null},acousticProfile:app.profile,automaticExperiment:app.lastAuto||null,units:{rms_dbfs:'digital dBFS (not dB SPL)',band_rel_db:'FFT relative spectral energy; uncalibrated'},rows},null,2);mime='application/json';ext='json';}else{const cols=Object.keys(rows[0]);const quote=v=>'"'+String(v===null||v===undefined?'':v).replaceAll('"','""')+'"';output=cols.join(',')+'\r\n'+rows.map(r=>cols.map(k=>quote(r[k])).join(',')).join('\r\n');mime='text/csv;charset=utf-8';ext='csv';}
+const a=document.createElement('a');const url=URL.createObjectURL(new Blob([output],{type:mime}));a.href=url;a.download='quietcab-medicion-'+new Date().toISOString().replaceAll(':','-')+'.'+ext;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Archivo '+ext.toUpperCase()+' generado en tu dispositivo.');}
+function init(){for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>{toggleTabs(b.dataset.tab);if(b.dataset.tab==='session')syncSessionUI();});el('environment').addEventListener('change',updateContextNotice);updateContextNotice();el('startMic').addEventListener('click',startMic);el('stopMic').addEventListener('click',()=>stopMic());el('inputDevice').addEventListener('change',()=>{if(app.stream)stopMic('Se cambió la entrada; pulsa «Iniciar medición» para activar el micrófono elegido.');});
+el('frequency').addEventListener('input',()=>setManualFrequency(el('frequency').value));
+el('frequencyNumber').addEventListener('change',()=>{
+ if(!setManualFrequency(el('frequencyNumber').value)){
+  el('frequencyNumber').value=el('frequency').value;notify('Frecuencia fuera de rango: 40 a 2000 Hz.');
+ }
+});
+el('useDetected').addEventListener('click',useDetected);
+el('useDetectedMeasure').addEventListener('click',useDetected);
+el('phase').addEventListener('input',()=>{el('phaseValue').textContent=el('phase').value+'°';if(app.soundActive&&!app.comparisonActive)app.toneNode?.port.postMessage(soundParams());});
+el('amplitude').addEventListener('input',()=>{el('amplitudeValue').textContent='−'+Math.abs(+el('amplitude').value)+' dBFS';if(app.soundActive&&!app.comparisonActive)app.toneNode?.port.postMessage(soundParams());});
+el('highOutputCheck').addEventListener('change',()=>{
+ const high=el('highOutputCheck').checked;
+ el('amplitude').max=high?'-18':'-30';
+ if(!high&&+el('amplitude').value>-30)el('amplitude').value='-30';
+ el('amplitudeValue').textContent='−'+Math.abs(+el('amplitude').value)+' dBFS';
+ el('levelNote').textContent=high?'Rango avanzado habilitado hasta −18 dBFS (pico digital). Reduce el volumen físico antes de aumentarlo.':'Rango normal: −60 a −30 dBFS (pico). Marca la casilla para habilitar hasta −18 dBFS.';
+ if(app.soundActive&&!app.comparisonActive)app.toneNode?.port.postMessage(soundParams());
+});
+el('startTone').addEventListener('click',()=>{if(app.comparisonActive||app.autoActive||app.captureActive)return;startTone();});el('stopTone').addEventListener('click',()=>{stopAutomatic('');abortComparison('');hardStopTone('Tono detenido manualmente.');});el('dockStop').addEventListener('click',()=>{stopAutomatic('');abortComparison('');hardStopTone('Tono detenido manualmente.');});el('oneTap').addEventListener('click',runOneTap);el('captureProfile').addEventListener('click',captureProfile);el('deleteProfile').addEventListener('click',()=>{app.profile=null;try{localStorage.removeItem('quietcab-profile-v04');}catch{}renderProfile();notify('Perfil estadístico eliminado.');});el('autoRun').addEventListener('click',runAutomatic);el('autoStop').addEventListener('click',()=>stopAutomatic());el('compareButton').addEventListener('click',runComparison);el('stopCompare').addEventListener('click',()=>abortComparison());el('downloadCsv').addEventListener('click',()=>downloadData('csv'));el('downloadJson').addEventListener('click',()=>downloadData('json'));el('clearSession').addEventListener('click',()=>{app.recording=[];app.startAt=performance.now();syncSessionUI();notify('Se borraron todas las métricas de la sesión.');});
+for(let i=0;i<5;i++){const [lo,hi]=[[30,100],[100,300],[300,1000],[1000,3000],[3000,10000]][i];const d=document.createElement('div');d.className='band';d.id='band'+i;d.innerHTML='<span>'+(hi===10000?'3–10k':lo+'–'+(hi>=1000?hi/1000+'k':hi))+' Hz</span><div class="track"><div style="width:0%"></div></div><span class="value-right">—</span>';el('bands').append(d);}
+const audioSupported=Boolean(window.AudioContext||window.webkitAudioContext);el('browserInfo').textContent='Origen seguro: '+(window.isSecureContext?'sí':'no')+' · MediaDevices: '+(navigator.mediaDevices?.getUserMedia?'disponible':'no disponible')+' · Web Audio: '+(audioSupported?'sí':'no')+'.';if(!audioSupported)uiStatus('micStatus','Este navegador no dispone de Web Audio. Prueba con Chrome Android actualizado.','bad');
+window.addEventListener('resize',setupCanvas);window.addEventListener('pagehide',()=>stopAll('Página cerrada.'));document.addEventListener('visibilitychange',()=>{if(document.hidden)stopAll('Sesión detenida al pasar a segundo plano.');});navigator.mediaDevices?.addEventListener?.('devicechange',()=>{stopAutomatic('Dispositivo de audio modificado.');hardStopTone('Ruta de audio modificada.');populateDevices();});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();app.installPrompt=e;el('installBtn').classList.add('active');});el('installBtn').addEventListener('click',async()=>{if(!app.installPrompt)return;app.installPrompt.prompt();await app.installPrompt.userChoice;app.installPrompt=null;el('installBtn').classList.remove('active');});
+app.profile=loadProfile();renderProfile();if(location.protocol==='https:'&&'serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}syncSessionUI();setupCanvas();startStopVisual();}
+init();
+</script>
+</body></html>
